@@ -1,0 +1,5 @@
+export const PLAYERS=['Duncan','Jacob','Matt','Weston'];
+const cycle=[[['Duncan','Matt'],['Jacob','Weston']],[['Duncan','Weston'],['Jacob','Matt']],[['Duncan','Jacob'],['Weston','Matt']]];
+export function regularSeasonWeeks(){return Array.from({length:14},(_,i)=>({week:i+1,type:'regular',matchups:cycle[i%3].map(([player1,player2])=>({player1,player2})),scores:{},bets:[]}));}
+export function initialLeague(){return {schemaVersion:2,id:'buff-husky-2026',season:{name:'Buff Husky Fantasy',label:'2026–2027',status:'active',startingPotCents:0,regularSeasonWeeks:14,playoffStartWeek:15},players:[...PLAYERS],weeks:[...regularSeasonWeeks(),{week:15,type:'playoff',matchups:[],scores:{},bets:[]}],adjustments:[],seasonPayout:{playoffWinner:null,percentages:[30,20,20,20,10]},metadata:{lastUpdated:new Date().toISOString()}};}
+export function validateLeague(d){if(!d||d.schemaVersion!==2)throw new Error('Unsupported backup schema.');if(!Array.isArray(d.players)||d.players.length!==4)throw new Error('League must contain exactly four players.');if(!Array.isArray(d.weeks))throw new Error('Missing weeks.');return true;}
