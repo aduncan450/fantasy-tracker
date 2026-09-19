@@ -12,6 +12,19 @@
 - Money: integer cents only
 - Derived state: standings, dues, pot balance, and week status are calculated from canonical inputs
 
+## Frontend deployment / cache busting
+
+GitHub Pages and mobile browsers may continue serving cached CSS or JavaScript after a deployment. Asset cache busting is therefore a required part of every frontend change.
+
+- Public asset URLs in `index.html` use a version query string, e.g. `styles.css?v=...` and `js/public.js?v=...`.
+- Admin asset URLs in `admin/index.html` use the same pattern for `styles.css`, `js/admin.js`, and `js/bet-adjustments-admin.js`.
+- **Whenever any referenced CSS or JavaScript file is changed, bump the corresponding `?v=` value in every HTML page that loads that asset as part of the same change/commit.**
+- `styles.css` is shared by the public and admin views, so changing it requires bumping its version in both `index.html` and `admin/index.html`.
+- Do not rely on users manually refreshing, clearing Safari/Chrome cache, or reopening the site to receive frontend fixes.
+- Keep the existing no-cache HTML meta directives so the HTML itself is refreshed and can point browsers at the newly versioned assets.
+
+This is a standing implementation requirement for future sessions and frontend work.
+
 ## League rules
 
 - Regular season: Weeks 1–14
