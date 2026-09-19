@@ -6,12 +6,23 @@
 
 - Public site: polished, read-only league dashboard
 - `/admin`: commissioner-only data entry and maintenance
-- Canonical storage: Supabase (public read, authenticated admin write via RLS)
+- Canonical production storage: Supabase (public read, authenticated admin write via RLS)
+- Admin TEST MODE: isolated disposable browser-local copy using the same league schema/business logic; never read by the public dashboard
 - GitHub Pages: static hosting
 - JSON export/import: independent backup and recovery
 - Money: integer cents only
 - Derived state: dues, pot balance, player summaries, and week status are calculated from canonical inputs
 - Sleeper: commissioner-assisted roster mapping, score sync, and weekly projections
+
+## Admin TEST MODE
+
+Use TEST MODE for destructive manual/end-to-end QA instead of editing the live league. After commissioner sign-in, the admin portal can start from either a snapshot of current production data or a clean generated league.
+
+While TEST MODE is active, the admin portal is given an unmistakable yellow warning treatment. Admin save paths write only to isolated `localStorage`; they do not write the production Supabase league row. The public dashboard continues to load Supabase and therefore cannot display test data.
+
+TEST MODE persists across refreshes on the same browser so session/refresh behavior can be tested. **Reset test data** restores the exact seed used when the mode was entered. **Exit & discard** deletes the test dataset and reloads production. TEST MODE deliberately is not a shared/multi-device test environment.
+
+The real admin workflows remain in use, including scores, dues/payment state, pot/accounting calculations, $10 parlay legs, $5 bets, PrizePicks actual wagers, Sleeper reads/sync/finality/projections, and backup import/export. Production authentication and RLS are unchanged.
 
 ## Frontend deployment / cache busting
 
