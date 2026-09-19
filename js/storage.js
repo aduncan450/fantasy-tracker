@@ -1,4 +1,4 @@
-import {SUPABASE_URL,SUPABASE_ANON_KEY,LEAGUE_ID,isConfigured} from './config.js';import {initialLeague,validateLeague} from './schema.js';
+import {SUPABASE_URL,SUPABASE_ANON_KEY,LEAGUE_ID,isConfigured} from './config.js?v=20260919-qa2';import {initialLeague,validateLeague} from './schema.js?v=20260919-qa2';
 const headers=()=>({'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'});
 const ADMIN_URL='https://aduncan450.github.io/fantasy-tracker/admin/';
 const SESSION_KEY='bh_session';
