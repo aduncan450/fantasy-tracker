@@ -20,13 +20,15 @@ Season 2026–2027; starting pot $0; players Duncan, Jacob, Matt, Weston; regula
 ## 4. Weekly dues
 After all four regular-season scores are final, lowest overall scorer owes $10 and loser of the other matchup owes $5. Scores support two decimals. Ties stop automatic resolution. Each weekly charge has its own paid/unpaid state. Unpaid charges increase Unpaid/Owes but not the pot; paid charges increase Collected and the pot. Historical score changes recalculate derived dues.
 
+Weekly calculations fail closed if the matchup structure is malformed: a regular-season week must contain exactly two matchups and use all four configured players exactly once. Invalid matchup data must never silently generate dues.
+
 ## 5. Sleeper integration
 The commissioner can map all four Sleeper rosters to tracker players. Score sync may occur while games are live; incomplete scores do not create dues. Sleeper matchups can replace the default matchup cycle for the synced week. Projections are pulled separately, reviewed, and saved. Public upcoming matchups show season average and saved Sleeper projection with equal visual treatment.
 
 ## 6. Betting
 Standard weekly bets are a $10 parlay and a $5 bet. Bet statuses: `placed`, `won`, `lost`, `push`, `void`. Recording a bet removes its full funded stake from the pot. `payoutCents` is total cash returned, not profit, and is added in full.
 
-The $10 parlay has one leg per league player. Individual leg statuses are `pending`, `hit`, `miss`, `push` and may be saved as each leg settles independently of the overall parlay outcome. Public player cards summarize decided parlay legs and recent leg outcomes.
+The $10 parlay has one leg per league player. Individual leg statuses are `pending`, `hit`, `miss`, `push` and may be saved as each leg settles independently of the overall parlay outcome. Public player cards summarize decided parlay legs and recent leg outcomes. Validation prevents duplicate players within structured parlay legs. Existing pre-leg-tracking $10 parlays stored as descriptions remain valid and are upgraded by the admin editor when edited.
 
 ### PrizePicks $5 stake adjustment
 PrizePicks may reduce the amount actually wagered below the $5 funded by the pot so the possible payout is an even dollar amount. The commissioner records the actual wager for each week containing a $5 bet. The difference `$5.00 - actual wager` is the amount the bet placer owes back to the pot at season end.
@@ -51,7 +53,9 @@ Derived: matchup results, dues, player counts/owes, parlay hit-rate summary, col
 Mobile-first dark sports aesthetic, green accent, dense/readable cards, symmetric gutters, no accidental horizontal overflow. Most labels/headings are uppercase but people's names remain title case; uppercase typography should be compact. Public is read-only and visually polished. Admin may be utilitarian but must remain comfortable on an iPhone. Local edits must clearly distinguish themselves from remote saves.
 
 ## 11. Data safety and validation
-Supabase is authoritative. Preserve integer-cent money math, per-charge payment traceability, explicit adjustments instead of direct balance edits, full JSON export/import, confirmation before imported data replaces in-memory state, explicit save after import, and remote-data preservation on failed saves. `validateLeague()` must validate the meaningful structure and enums of imported/saved data rather than merely checking that arrays exist.
+Supabase is authoritative. Preserve integer-cent money math, per-charge payment traceability, explicit adjustments instead of direct balance edits, full JSON export/import, confirmation before imported data replaces in-memory state, explicit save after import, and remote-data preservation on failed saves.
+
+`validateLeague()` is a safety boundary for both remote loads/saves and backup imports. It validates configured players, required Weeks 1–15 and week types, regular-season matchup uniqueness/completeness, nonnegative scores/projections, supported $5/$10 bet stakes and status enums, structured parlay-leg uniqueness/statuses, payment-key shape, Sleeper roster mapping/timestamps, PrizePicks actual-wager bounds, and explicit adjustment structure. Adjustments must have a nonzero integer-cent amount and a meaningful reason; week-scoped adjustments must reference a real week. Validation should reject malformed canonical state before it can participate in accounting.
 
 ## 12. Frontend cache busting — mandatory
 GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment must ensure changed assets and their dependency graph receive a new URL.
@@ -66,7 +70,7 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 ## 13. Source layout
 `index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styles; `js/config.js` public config; `js/schema.js` initial data + validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth; `js/sleeper.js` Sleeper API; `js/public.js` public rendering; `js/admin.js` core admin UI; `js/bet-adjustments-admin.js` admin-only weekly PrizePicks tracking; `supabase/schema.sql` database/RLS bootstrap; `README.md` concise repository overview; `AGENTS.md` standing implementation instructions; this file is the living product/technical specification.
 
-Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted, not hidden with DOM cleanup or left as dead handlers.
+Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted, not hidden with DOM cleanup or left as dead handlers. Unused exported workflow helpers should likewise be removed rather than retained speculatively.
 
 ## 14. Current implementation state
 Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, per-leg parlay outcomes, Sleeper score sync, Sleeper projections, season payout projection, backups, commissioner-save timestamp semantics, and admin-only PrizePicks stake tracking exist. The project is in enhancement/QA phase, not initial architecture design.
@@ -92,3 +96,4 @@ Every implementation change must include a documentation-impact check. Update th
 13. PrizePicks actual-stake differences are admin-only informational tracking until explicit season-end settlement and never affect live pot accounting.
 14. Frontend changes must invalidate every changed browser-cached asset, including transitive ES-module dependencies.
 15. Documentation must remain synchronized with implementation as part of each change.
+16. Malformed matchup or canonical data must fail validation/calculation safely rather than generate financial results.
