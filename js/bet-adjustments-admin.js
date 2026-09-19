@@ -1,5 +1,5 @@
-import {loadLeague,saveLeague,session} from './storage.js?v=20260919-qa2';
-import {money} from './calculations.js?v=20260919-qa2';
+import {loadLeague,saveLeague,session} from './storage.js?v=20260919-qa3';
+import {money} from './calculations.js?v=20260919-qa3';
 
 const EXPECTED_CENTS=500;
 let busy=false,rendering=false,renderQueued=false;
