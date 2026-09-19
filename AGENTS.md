@@ -46,4 +46,8 @@ Before considering a change complete, check for consistency across:
 - documentation
 - cache-busting/version references for frontend assets
 
+For destructive/manual admin QA, use the built-in TEST MODE before touching production data. Test both production-snapshot and clean-league seeds when relevant. Verify reset, page refresh persistence, Exit & discard, and that the public dashboard remains unchanged while test data is mutated. TEST MODE must remain isolated at the storage boundary: do not add feature-specific test implementations or any test path that can write the production league row.
+
+Production league data must never become canonical in `localStorage`; only disposable TEST MODE copies may live there. Authentication and Supabase RLS remain the production security boundary and must not be weakened to make testing easier.
+
 Remove superseded code rather than leaving duplicate implementations hidden by runtime DOM manipulation whenever practical.
