@@ -22,7 +22,7 @@ While TEST MODE is active, the admin portal is given an unmistakable yellow warn
 
 TEST MODE persists across refreshes on the same browser so session/refresh behavior can be tested. **Reset test data** restores the exact seed used when the mode was entered. **Exit & discard** deletes the test dataset and reloads production. TEST MODE deliberately is not a shared/multi-device test environment.
 
-The real admin workflows remain in use, including scores, dues/payment state, pot/accounting calculations, $10 parlay legs, $5 bets, PrizePicks actual wagers, Sleeper reads/sync/finality/projections, and backup import/export. Production authentication and RLS are unchanged.
+The real admin workflows remain in use, including scores, dues/payment state, pot/accounting calculations, $10 parlay legs, $5 bets, PrizePicks actual wagers, Sleeper reads/sync/finality/projections, Week 16 final betting, and backup import/export. Production authentication and RLS are unchanged.
 
 ## Frontend deployment / cache busting
 
@@ -50,9 +50,11 @@ Documentation is part of the change, not a separate cleanup task.
 ## League rules
 
 - Regular season: Weeks 1–14
-- Playoffs begin Week 15
-- Lowest weekly score owes $10
-- Loser of the other matchup owes $5
+- Fantasy playoffs: Week 15
+- Final betting period: Week 16, betting-only, so Week 15 bet returns can still fund one last $10 parlay and $5 wager
+- Week 16 has no fantasy scores, matchups, dues, or Sleeper score/projection workflow
+- Lowest weekly score owes $10 during the regular season
+- Loser of the other matchup owes $5 during the regular season
 - Weekly bets: one $10 parlay and one $5 wager
 - Placing a bet removes its recorded stake from the pot
 - Bet payout means total cash returned and is added to the pot
@@ -62,11 +64,13 @@ Documentation is part of the change, not a separate cleanup task.
 - Season payout projection: playoff champion 30%, each of the other three players 20%, Playoff Betting Fund 10%
 - The 10% Playoff Betting Fund is for gambling on this season's playoffs after the fantasy league ends
 
+Existing league rows and older valid backups that predate Week 16 are normalized in memory by adding an empty betting-only Week 16 before validation. The added week becomes canonical the next time the commissioner saves.
+
 ### PrizePicks $5 stake adjustment tracking
 
 PrizePicks may reduce the amount actually wagered below the $5 funded by the pot so the potential payout is an even dollar amount. The commissioner records the actual weekly wager in the admin portal, and the tracker calculates `$5.00 - actual wager` as the amount the bet placer owes back to the pot at season end.
 
-This tracking is admin-only. It is excluded from the public dashboard, ledger, live pot, and payout projection. Saving weekly adjustment amounts must not create a pot adjustment or otherwise change public accounting.
+This tracking is admin-only. It is excluded from the public dashboard, ledger, live pot, and payout projection. Saving weekly adjustment amounts must not create a pot adjustment or otherwise change public accounting. Week 16 $5 bets use the same tracking behavior.
 
 ### Recurring regular-season matchup cycle
 
@@ -74,7 +78,7 @@ This tracking is admin-only. It is excluded from the public dashboard, ledger, l
 2. Duncan vs Weston; Jacob vs Matt
 3. Duncan vs Jacob; Weston vs Matt
 
-The cycle repeats through Week 14. Sleeper score sync may replace a week's matchup ordering with the actual Sleeper matchup data. Week 15 playoff matchups are entered when known.
+The cycle repeats through Week 14. Sleeper score sync may replace a week's matchup ordering with the actual Sleeper matchup data. Week 15 playoff matchups are entered when known. Week 16 intentionally has no matchups.
 
 ## Status
 
