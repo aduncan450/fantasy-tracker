@@ -9,11 +9,12 @@ const settled=b=>Boolean(b)&&['won','lost','push','void'].includes(b.status);
 function syncDirtyUi(){
   document.body.classList.toggle('has-unsaved',dirty);
   const badge=document.querySelector('#unsaved-badge'),dock=document.querySelector('#save-dock');
-  if(badge)badge.hidden=!dirty;
-  if(dock)dock.hidden=!dirty;
+  if(badge&&badge.hidden===dirty)badge.hidden=!dirty;
+  if(dock&&dock.hidden===dirty)dock.hidden=!dirty;
   if(dock){
     const note=dock.querySelector('[data-save-note]');
-    if(note)note.textContent=draftDirty?'Unapplied form edits still need their Apply action. This saves already-applied changes.':document.body.classList.contains('test-mode')?'Save to isolated TEST MODE storage before leaving.':'Save to Supabase before leaving the admin portal.';
+    const text=draftDirty?'Unapplied form edits still need their Apply action. This saves already-applied changes.':document.body.classList.contains('test-mode')?'Save to isolated TEST MODE storage before leaving.':'Save to Supabase before leaving the admin portal.';
+    if(note&&note.textContent!==text)note.textContent=text;
   }
 }
 function markDirty(){dirty=true;syncDirtyUi()}
@@ -69,11 +70,13 @@ function decorateWeekPicker(data){
     if(!w)continue;
     const type=w.type==='playoff'?' · Playoffs':w.type==='betting'?' · Final betting':'';
     const marker=!row?.started?'':week===workflowWeek?' · ← CURRENT':row.needsAttention?' · •':' · ✓';
-    option.textContent=`Week ${week}${type}${marker}`;
+    const text=`Week ${week}${type}${marker}`;
+    if(option.textContent!==text)option.textContent=text;
   }
   lastWeekValue=select.value;
   const help=select.closest('.card')?.querySelector('.muted');
-  if(help)help.textContent='← marks the workflow week, • marks a started week that still needs attention, and ✓ marks a cleared started week. Weeks 15–16 are playoffs; Week 17 is betting-only.';
+  const helpText='← marks the workflow week, • marks a started week that still needs attention, and ✓ marks a cleared started week. Weeks 15–16 are playoffs; Week 17 is betting-only.';
+  if(help&&help.textContent!==helpText)help.textContent=helpText;
 }
 function closeoutCard(data){
   const {rows}=summaries(data),visible=rows.filter(x=>x.started&&(x.needsAttention||x.isCurrent)),older=rows.filter(x=>x.started&&x.needsAttention&&!x.isCurrent).length;
@@ -85,8 +88,16 @@ function ensureActions(){
 }
 function ensureDock(){
   if(!admin()?.isAuthenticated?.()||document.querySelector('#save-dock'))return;
-  app.insertAdjacentHTML('beforeend',`<section id="save-dock" class="save-dock" hidden><div><strong>Unsaved changes</strong><span data-save-note></span></div><button id="sticky-save" type="button">Save now</button></section>`);
+  app.insertAdjacentHTML('beforeend','<section id="save-dock" class="save-dock" hidden><div><strong>Unsaved changes</strong><span data-save-note></span></div><button id="sticky-save" type="button">Save now</button></section>');
   document.querySelector('#sticky-save')?.addEventListener('click',()=>document.querySelector('#save')?.click());
+}
+function ensureCloseout(data){
+  const picker=document.querySelector('#week-picker')?.closest('.card');
+  if(!picker)return;
+  const html=closeoutCard(data),existing=document.querySelector('#weekly-closeout');
+  if(existing?.outerHTML===html)return;
+  existing?.remove();
+  picker.insertAdjacentHTML('afterend',html);
 }
 function renderEnhancements(){
   const bridge=admin();
@@ -94,9 +105,7 @@ function renderEnhancements(){
   const data=bridge.getData?.();
   if(!data)return;
   ensureActions();
-  document.querySelector('#weekly-closeout')?.remove();
-  const picker=document.querySelector('#week-picker')?.closest('.card');
-  if(picker)picker.insertAdjacentHTML('afterend',closeoutCard(data));
+  ensureCloseout(data);
   decorateWeekPicker(data);
   ensureDock();
   syncDirtyUi();
