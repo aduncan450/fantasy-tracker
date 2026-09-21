@@ -49,6 +49,10 @@ The admin can navigate Weeks 1–17 without changing the derived workflow week. 
 
 The admin can edit scores, mark each derived due paid/unpaid, create/update bets, save individual parlay leg outcomes, preview supported NFL bet results, apply detected statuses locally for commissioner review, track PrizePicks actual wagers, edit Sleeper roster mapping, sync Sleeper scores, export/import backups, and save all changes. Admin-only PrizePicks tracking participates in the same main save lifecycle.
 
+Admin in-memory mutations are tracked with an explicit dirty state. After an Apply/import/sync/payment/direct-entry action changes tracker data without persisting it, the portal shows **UNSAVED CHANGES** plus a fixed mobile-friendly **Save now** control. Successful production or TEST MODE persistence clears the dirty state. Browser unloads and destructive admin actions such as sign-out or changing test datasets warn before discarding dirty data. Draft text typed into forms that still require their existing **Apply** action is not falsely represented as persisted in-memory tracker data; changing weeks or otherwise discarding an unapplied draft prompts separately.
+
+The admin also derives a **Weekly closeout** checklist from existing tracker state; no new closeout fields are stored. Started/current weeks are evaluated for score finality where applicable, regular-season dues payment completion, overall parlay settlement, individual parlay-leg completion, and $5 bet settlement. The week selector marks the derived workflow week with `← CURRENT`, unresolved started weeks with `•`, and cleared started weeks with `✓`. Future untouched weeks remain unmarked. Historical cleared weeks drop out of the closeout card while remaining visibly checked in the selector.
+
 Automated bet-result checking is deliberately separate from persistence/accounting. The checker reads the currently entered bet descriptions, fetches the selected NFL week's ESPN scoreboard and box scores, and shows evidence for each proposal. **Check results** is read-only. **Apply detected statuses locally** only changes the current admin form/data in memory. Production Supabase and pot/accounting change only after the existing **Save all changes** action, exactly like other admin edits. Payout values and overall parlay status remain commissioner-entered.
 
 ## 8. Public dashboard
@@ -68,6 +72,8 @@ Names remain normal case. Most labels/headings use the established uppercase vis
 
 TEST MODE must be unmistakable with its yellow warning treatment, persistent banner, and explicit production-safety copy. Reset and Exit & discard controls must remain legible and mobile-friendly.
 
+Admin dirty-state controls must remain visible without forcing the commissioner back to the top of a long mobile page. The sticky save control must not obscure form content; the admin shell reserves bottom space while it is visible.
+
 ## 11. Data safety and validation
 Supabase is authoritative for production. Preserve integer-cent money math, per-charge payment traceability, explicit adjustments instead of direct balance edits, JSON export/import, confirmation before import replacement, explicit save after import, and remote-data preservation on failed saves.
 
@@ -75,7 +81,7 @@ Supabase is authoritative for production. Preserve integer-cent money math, per-
 
 `normalizeLeague()` runs before validation on production data, TEST MODE data, and imports. It upgrades older valid data and migrates the superseded Week-16-final-betting shape into Week 17.
 
-Bet-result proposals/overlays are transient UI state and are not part of the league schema. No external result feed is allowed to write canonical league data directly.
+Bet-result proposals/overlays, admin dirty state, unapplied-draft state, weekly closeout status, and week-selector attention markers are transient UI state and are not part of the league schema. No external result feed is allowed to write canonical league data directly.
 
 ## 12. Admin TEST MODE
 TEST MODE is an admin-only manual/end-to-end QA sandbox implemented at the persistence boundary.
@@ -85,8 +91,9 @@ TEST MODE is an admin-only manual/end-to-end QA sandbox implemented at the persi
 - Seed and mutable working copy are stored separately for reliable reset.
 - Admin save paths use isolated test `localStorage`; no league write is sent to Supabase.
 - TEST MODE persists across page refreshes in the same browser.
-- The week selector supports Weeks 1–17.
+- The week selector supports Weeks 1–17 and retains the same derived closeout/attention markers as production admin.
 - **Reset test data** restores the seed. **Exit & discard** deletes test keys and reloads production.
+- Dirty-state warnings, unapplied-draft warnings, and the sticky save control behave the same way in TEST MODE, while saving targets only isolated test storage.
 - The public dashboard never reads TEST MODE keys. Its live Sleeper and automatic bet-result overlays are independent of TEST MODE and remain read-only.
 - Backup export/import uses the active test dataset while TEST MODE is active.
 - TEST MODE is browser-local and disposable, not canonical or multi-device storage.
@@ -98,16 +105,17 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 - JavaScript ES-module imports also carry the deployment version for local imported modules.
 - When a shared dependency changes, bump the deployment version through every entry point/import path that can load it.
 - Shared CSS changes require a version bump in both public and admin HTML.
+- Admin-only CSS uses its own versioned URL in `admin/index.html`.
 - Keep no-cache HTML meta directives.
 - Never rely on users clearing cache or hard-refreshing.
 
 ## 14. Source layout
-`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata, live reads, and score import; `js/bet-results.js` ESPN NFL result parsing/evaluation with no persistence side effects; `js/public.js` public rendering plus read-only live Sleeper and automatic bet-result overlays; `js/admin.js` admin UI, automatic Sleeper metadata load, score sync, Weeks 1–17 selector, betting and TEST MODE; `js/bet-adjustments-admin.js` admin-only PrizePicks UI; `js/bet-results-admin.js` admin-only result preview/apply workflow; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows with mocked external APIs; `playwright.config.js` desktop/iPhone browser configuration; `.github/workflows/qa.yml` CI; `supabase/schema.sql` database/RLS bootstrap; `README.md`, `AGENTS.md`, and this spec are durable documentation.
+`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styling; `admin.css` admin-only closeout/dirty-state styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata, live reads, and score import; `js/bet-results.js` ESPN NFL result parsing/evaluation with no persistence side effects; `js/public.js` public rendering plus read-only live Sleeper and automatic bet-result overlays; `js/admin.js` core admin UI, automatic Sleeper metadata load, score sync, Weeks 1–17 selector, betting and TEST MODE; `js/admin-qol.js` admin-only dirty-state/draft protection, sticky save, weekly closeout, and selector attention markers; `js/bet-adjustments-admin.js` admin-only PrizePicks UI; `js/bet-results-admin.js` admin-only result preview/apply workflow; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows with mocked external APIs; `playwright.config.js` desktop/iPhone browser configuration; `.github/workflows/qa.yml` CI; `supabase/schema.sql` database/RLS bootstrap; `README.md`, `AGENTS.md`, and this spec are durable documentation.
 
 Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted rather than hidden or left as dead handlers.
 
 ## 15. Current implementation state
-Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, admin ESPN bet-result preview/apply for supported final NFL outcomes, public read-only automatic unresolved bet outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, combined matchup/score entry, PrizePicks stake tracking, backward-compatible normalization/migration, isolated admin TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections have been removed.
+Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, admin ESPN bet-result preview/apply for supported final NFL outcomes, public read-only automatic unresolved bet outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, derived weekly closeout/attention markers, unsaved-change and unapplied-draft protection with sticky save, combined matchup/score entry, PrizePicks stake tracking, backward-compatible normalization/migration, isolated admin TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections have been removed.
 
 ## 16. Development workflow
 Work directly against `aduncan450/fantasy-tracker`, inspect current files before overwriting, make concrete commits, and report commit SHAs. Favor small understandable vanilla-JS changes. Use actual mobile screenshots as visual truth. Minimize human setup and assume the commissioner may be mobile-only.
@@ -136,12 +144,14 @@ Automated regression tests are the default repeatable QA layer. Run `npm test` w
 17. Previously verified deterministic behavior should be protected by automated regression tests whenever practical; tests must never write production league data.
 18. External bet-result feeds may display or propose outcomes but must never directly write canonical league data, payouts, overall parlay status, player statistics, ledger entries, or pot state.
 19. Commissioner-saved bet statuses always take precedence over automatic public result overlays.
+20. Admin dirty state, unapplied-draft state, closeout status, and attention markers are derived UI state only and must never become canonical league fields.
+21. Any admin path that mutates in-memory league data without immediately persisting it must participate in dirty-state protection.
 
 ## 18. Automated QA architecture
 The test suite deliberately stays lightweight and free to run in the public GitHub repository.
 
 - `node --test` exercises deterministic league behavior directly against production modules. Coverage includes matchup/dues rules, incomplete/tied weeks, Sleeper live/final gating, paid/unpaid accounting, payment reversal, historical score corrections, stake/payout math, parlay stats, Week 17 constraints, legacy Week 16→17 migration, bet-description parsing, player/team matching, final-game gating, and supported ESPN result evaluation.
 - Playwright serves the static app locally and intercepts Supabase/Sleeper/ESPN requests. This lets browser tests exercise the real admin/public JavaScript without production writes, external API instability, or a second implementation of business rules.
-- Core browser scenarios run in desktop Chromium and an iPhone-sized project. Current coverage includes TEST MODE persistence/public isolation, payment/accounting behavior, historical corrections, public live Sleeper score rendering, graceful Sleeper fallback, admin bet-result preview/apply without automatic payout or overall-parlay changes, public automatic unresolved bet-result display without accounting changes, and saved-status precedence that skips unnecessary ESPN checks.
+- Core browser scenarios run in desktop Chromium and an iPhone-sized project. Current coverage includes TEST MODE persistence/public isolation, payment/accounting behavior, historical corrections, public live Sleeper score rendering, graceful Sleeper fallback, admin dirty-state/sticky-save protection, unapplied-draft week-navigation protection, weekly closeout/selector attention markers, admin bet-result preview/apply without automatic payout or overall-parlay changes, public automatic unresolved bet-result display without accounting changes, and saved-status precedence that skips unnecessary ESPN checks.
 - `.github/workflows/qa.yml` installs the test dependencies/browser and runs `npm test` on every push to `main` and on pull requests.
 - Manual QA findings that expose reproducible regressions should become automated regression tests whenever practical so they are not repeatedly rechecked by hand.
