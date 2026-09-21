@@ -137,6 +137,12 @@ app.addEventListener('change',e=>{
 app.addEventListener('click',e=>{
   const target=e.target.closest?.('button,a');
   if(!target)return;
+  if(target.matches('#save,#sticky-save')&&draftDirty){
+    alert('Apply or discard the current form edits before saving.');
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return;
+  }
   if(target.matches('#edit-sleeper-map'))markDirty();
   if(target.matches('#logout')&&!discardGuard('Sign out and discard unsaved or unapplied changes?')){e.preventDefault();e.stopImmediatePropagation();return}
   if(target.matches('#test-production,#test-clean')&&!discardGuard('Discard unsaved or unapplied changes and start TEST MODE?')){e.preventDefault();e.stopImmediatePropagation();return}
