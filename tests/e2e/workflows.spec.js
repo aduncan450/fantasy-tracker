@@ -137,3 +137,75 @@ test('Week 17 is betting-only in the admin UI',async({page})=>{
   await expect(page.getByRole('button',{name:'Sync Week 17 scores'})).toHaveCount(0);
   await expect(page.getByText(/Betting-only period after the fantasy playoffs/)).toBeVisible();
 });
+
+test('unsaved admin mutations show a sticky save control and guard sign out',async({page})=>{
+  await openCleanTestMode(page);
+
+  for(const [i,player] of PLAYERS.entries())await page.getByRole('spinbutton',{name:player,exact:true}).fill(String(100+i*10));
+  await page.getByRole('button',{name:'Apply scores'}).click();
+
+  await expect(page.locator('#unsaved-badge')).toBeVisible();
+  await expect(page.locator('#save-dock')).toBeVisible();
+  await expect(page.locator('body')).toHaveClass(/has-unsaved/);
+
+  page.once('dialog',dialog=>{
+    expect(dialog.message()).toContain('discard unsaved');
+    dialog.dismiss();
+  });
+  await page.getByRole('button',{name:'Sign out'}).click();
+  await expect(page.locator('#save-dock')).toBeVisible();
+
+  await page.locator('#sticky-save').click();
+  await expect(page.locator('#save-dock')).toBeHidden();
+  await expect(page.locator('#unsaved-badge')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveClass(/has-unsaved/);
+
+  await page.reload();
+  await expect(page.getByRole('spinbutton',{name:PLAYERS[0],exact:true})).toHaveValue('100');
+});
+
+test('unapplied form drafts warn before changing weeks',async({page})=>{
+  await openCleanTestMode(page);
+  await page.getByRole('spinbutton',{name:PLAYERS[0],exact:true}).fill('123');
+
+  page.once('dialog',dialog=>{
+    expect(dialog.message()).toContain('Discard unapplied form edits');
+    dialog.dismiss();
+  });
+  await page.getByLabel('Week to edit').selectOption('2');
+  await expect(page.getByLabel('Week to edit')).toHaveValue('1');
+  await expect(page.getByRole('spinbutton',{name:PLAYERS[0],exact:true})).toHaveValue('123');
+});
+
+test('weekly closeout and week selector markers surface unresolved historical work',async({page})=>{
+  await openCleanTestMode(page);
+
+  await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/← CURRENT/);
+  for(const [i,player] of PLAYERS.entries())await page.getByRole('spinbutton',{name:player,exact:true}).fill(String(100+i*10));
+  await page.getByRole('button',{name:'Apply scores'}).click();
+
+  await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/•/);
+  await expect(page.locator('#week-picker option[value="2"]')).toHaveText(/← CURRENT/);
+  const closeout=page.locator('#weekly-closeout');
+  await expect(closeout.getByText('Week 1',{exact:true})).toBeVisible();
+  await expect(closeout.getByText('2 dues payments unpaid',{exact:true})).toBeVisible();
+  await expect(closeout.getByText('$10 parlay not entered',{exact:true})).toBeVisible();
+  await expect(closeout.getByText('$5 bet not entered',{exact:true})).toBeVisible();
+
+  const weekOneDues=page.locator('.due-paid[data-week="1"]');
+  await expect(weekOneDues).toHaveCount(2);
+  await weekOneDues.nth(0).check();
+  await weekOneDues.nth(1).check();
+
+  for(const player of PLAYERS){
+    await page.locator(`textarea[name="leg-${player}"]`).fill(`${player} QA prop`);
+    await page.locator(`select[name="legstatus-${player}"]`).selectOption('hit');
+  }
+  await page.locator('select[name="parlay-status"]').selectOption('won');
+  await page.locator('textarea[name="single-desc"]').fill('QA single bet');
+  await page.locator('select[name="single-status"]').selectOption('lost');
+  await page.getByRole('button',{name:'Apply bets'}).click();
+
+  await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/✓/);
+  await expect(page.locator('#weekly-closeout').getByText('Week 1',{exact:true})).toHaveCount(0);
+});
