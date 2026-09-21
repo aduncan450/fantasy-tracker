@@ -45,17 +45,18 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
   await page.getByRole('button',{name:'Apply bets'}).click();
   await expect(page.getByRole('heading',{name:'$5 bet stake adjustments'})).toBeVisible();
 
-  const potBefore=await page.locator('.hero .metric').first().innerText();
+  const potValue=page.locator('.hero .metric').first().locator('strong');
+  const potBefore=await potValue.innerText();
   const actual=page.locator('#weekly-bet-adjustments .actual-bet');
   await actual.fill('4.60');
   await expect(page.locator('#bet-adjustment-total')).toHaveText('$0.40');
-  await expect(page.locator('.hero .metric').first()).toHaveText(potBefore);
+  await expect(potValue).toHaveText(potBefore);
 
   await page.getByRole('button',{name:'Save test changes'}).click();
   await page.reload();
   await expect(page.locator('#weekly-bet-adjustments .actual-bet')).toHaveValue('4.60');
   await expect(page.locator('#bet-adjustment-total')).toHaveText('$0.40');
-  await expect(page.locator('.hero .metric').first()).toHaveText(potBefore);
+  await expect(page.locator('.hero .metric').first().locator('strong')).toHaveText(potBefore);
 });
 
 test('partial parlay leg outcomes persist independently while overall parlay stays placed',async({page})=>{
