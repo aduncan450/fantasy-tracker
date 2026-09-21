@@ -5,13 +5,13 @@
 ## Architecture
 
 - Public site: read-only league dashboard with live current-week Sleeper scores and read-only automatic supported NFL bet outcomes when available
-- `/admin`: commissioner-only data entry and maintenance
+- `/admin`: commissioner-only data entry and maintenance, with derived weekly closeout/attention status and unsaved-change protection
 - Canonical production storage: Supabase (public read, authenticated admin write via RLS)
 - Admin TEST MODE: isolated disposable browser-local copy using the same league schema/business logic; never read by the public dashboard
 - GitHub Pages: static hosting
 - JSON export/import: independent backup and recovery
 - Money: integer cents only
-- Derived state: dues, pot balance, player summaries, and week status are calculated from canonical inputs
+- Derived state: dues, pot balance, player summaries, week status, and admin closeout/attention markers are calculated from canonical inputs
 - Sleeper: configured league metadata, roster mapping, live public scores, and commissioner final-score sync
 - NFL bet results: ESPN scoreboard/box-score reads can display supported unresolved outcomes publicly and propose the same outcomes in admin; only commissioner save makes them canonical
 
@@ -20,12 +20,18 @@
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
 - `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, and supported NFL bet-result parsing/evaluation.
-- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, graceful external-feed fallback, and admin bet-result preview/apply behavior.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
 
 The tests mock external writes and APIs; they do not modify the production Supabase league row. Manual TEST MODE QA remains useful for visual judgment and genuinely new workflows, but existing covered behavior should be protected by automated tests first.
+
+## Admin workflow safeguards
+
+The commissioner portal tracks when in-memory league data has changed but has not yet been persisted. After an Apply/import/sync/payment/direct-entry action mutates tracker data, **UNSAVED CHANGES** appears and a fixed **Save now** control stays available at the bottom of the page. Successful production or TEST MODE saves clear that state. Browser unloads and destructive actions such as sign-out warn before dirty data is discarded. Form text that still requires its existing **Apply** action is tracked separately: changing weeks warns before discarding that unapplied draft, while the sticky save only claims to save changes already applied to tracker data.
+
+The portal also includes a derived **Weekly closeout** card. It checks started/current weeks for score finality where applicable, regular-season dues payments, overall parlay status, individual parlay-leg completion, and the $5 bet. The week selector uses `← CURRENT` for the workflow week, `•` for unresolved started weeks, and `✓` for cleared started weeks. These indicators are UI-only and are never stored in league data.
 
 ## Sleeper behavior
 
@@ -53,14 +59,14 @@ While TEST MODE is active, the admin portal is given an unmistakable yellow warn
 
 TEST MODE persists across refreshes on the same browser. **Reset test data** restores the exact seed used when the mode was entered. **Exit & discard** deletes the test dataset and reloads production. TEST MODE deliberately is not a shared/multi-device test environment.
 
-The real admin workflows remain in use, including scores, dues/payment state, pot/accounting calculations, $10 parlay legs, $5 bets, PrizePicks actual wagers, Sleeper mapping/sync/finality, Weeks 15–16 playoffs, Week 17 final betting, admin bet-result preview/apply, and backup import/export. Production authentication and RLS are unchanged.
+The real admin workflows remain in use, including scores, dues/payment state, pot/accounting calculations, $10 parlay legs, $5 bets, PrizePicks actual wagers, Sleeper mapping/sync/finality, Weeks 15–16 playoffs, Week 17 final betting, weekly closeout/attention indicators, dirty-state and unapplied-draft protection, admin bet-result preview/apply, and backup import/export. Production authentication and RLS are unchanged.
 
 ## Frontend deployment / cache busting
 
 GitHub Pages and mobile browsers may continue serving cached CSS or JavaScript after a deployment. Asset cache busting is required for every frontend change.
 
 - Public asset URLs in `index.html` use version query strings.
-- Admin asset URLs in `admin/index.html` use the same pattern.
+- Admin asset URLs in `admin/index.html` use the same pattern, including admin-only CSS.
 - Whenever a CSS or JavaScript entry asset referenced by HTML changes, bump its `?v=` value in every HTML page that loads it.
 - Changes to imported JavaScript modules must also receive new URLs through the dependency graph.
 - Do not rely on users manually clearing browser cache.
