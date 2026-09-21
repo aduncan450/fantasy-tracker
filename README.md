@@ -4,7 +4,7 @@
 
 ## Architecture
 
-- Public site: read-only league dashboard with live current-week Sleeper scores when available
+- Public site: read-only league dashboard with live current-week Sleeper scores and read-only automatic supported NFL bet outcomes when available
 - `/admin`: commissioner-only data entry and maintenance
 - Canonical production storage: Supabase (public read, authenticated admin write via RLS)
 - Admin TEST MODE: isolated disposable browser-local copy using the same league schema/business logic; never read by the public dashboard
@@ -13,14 +13,14 @@
 - Money: integer cents only
 - Derived state: dues, pot balance, player summaries, and week status are calculated from canonical inputs
 - Sleeper: configured league metadata, roster mapping, live public scores, and commissioner final-score sync
-- NFL bet result preview: admin-only ESPN scoreboard/box-score reads that propose supported outcomes for commissioner review before the normal save path
+- NFL bet results: ESPN scoreboard/box-score reads can display supported unresolved outcomes publicly and propose the same outcomes in admin; only commissioner save makes them canonical
 
 ## Automated QA
 
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
 - `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, and supported NFL bet-result parsing/evaluation.
-- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, graceful Sleeper fallback, and admin bet-result preview/apply behavior.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, graceful external-feed fallback, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
@@ -35,19 +35,21 @@ For the current NFL/fantasy week, the public dashboard requests matchups and sco
 
 The commissioner can still sync a week's Sleeper scores into tracker data. Synced scores remain non-final for dues until Sleeper advances beyond that NFL week. Supabase remains canonical for finalized historical scores and all accounting. Sleeper projections are intentionally not tracked; they duplicated information already available in Sleeper without serving a tracker-specific workflow.
 
-## Admin bet-result checking
+## Automatic bet-result behavior
 
-The admin betting section can check supported descriptions against ESPN NFL scoreboard and box-score data for the selected week. This is deliberately review-first rather than auto-writing league data.
+Supported unresolved NFL bets can be evaluated from ESPN scoreboard and box-score data. The public dashboard now uses the same detection logic as admin for display only.
 
-**Check Week N results** is read-only and shows the proposed status plus the underlying final-game evidence. It does not change tracker state. **Apply detected statuses locally** copies only settled supported statuses into the current admin form/data. The normal **Save all changes** action is still required before production Supabase changes, so pot/accounting behavior follows the same commissioner-submit boundary as the rest of the portal.
+On the public page, a parlay leg still saved as **pending** may display a detected `hit · auto`, `miss · auto`, or `push · auto`. A $5 wager still saved as **placed** may display an automatic won/lost/push result beside that saved status. The page clearly notes that automatic results are read-only until the commissioner saves the official status in Admin. These overlays never change Supabase, payouts, overall parlay status, player parlay statistics, the ledger, or pot accounting. Commissioner-saved statuses always take precedence, and already settled saved bets do not trigger an ESPN check.
 
-The checker currently supports rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, and team-to-win/moneyline wording. Live games, unsupported descriptions, and ambiguous player/team matches are not guessed. Payout values and overall parlay status stay manual even when individual results are detected automatically.
+In admin, **Check Week N results** is read-only and shows the proposed status plus the underlying final-game evidence. It does not change tracker state. **Apply detected statuses locally** copies only settled supported statuses into the current admin form/data. The normal **Save all changes** action is still required before production Supabase changes, so pot/accounting behavior follows the same commissioner-submit boundary as the rest of the portal.
+
+The checker currently supports rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, and team-to-win/moneyline wording. Live games, unsupported descriptions, ambiguous player/team matches, and unavailable ESPN data are not guessed. Payout values and overall parlay status stay manual even when individual results are detected automatically.
 
 ## Admin TEST MODE
 
 Use TEST MODE for destructive manual/end-to-end QA instead of editing the live league. After commissioner sign-in, the admin portal can start from either a snapshot of current production data or a clean generated league.
 
-While TEST MODE is active, the admin portal is given an unmistakable yellow warning treatment. Admin save paths write only to isolated `localStorage`; they do not write the production Supabase league row. The public dashboard continues to load production Supabase plus its read-only live Sleeper overlay and therefore cannot display test data.
+While TEST MODE is active, the admin portal is given an unmistakable yellow warning treatment. Admin save paths write only to isolated `localStorage`; they do not write the production Supabase league row. The public dashboard continues to load production Supabase plus its read-only external-data overlays and therefore cannot display test data.
 
 TEST MODE persists across refreshes on the same browser. **Reset test data** restores the exact seed used when the mode was entered. **Exit & discard** deletes the test dataset and reloads production. TEST MODE deliberately is not a shared/multi-device test environment.
 
@@ -81,7 +83,7 @@ Documentation is part of the change. Review and update `docs/SPEC.md`, this READ
 - Bet payout means total cash returned and is added to the pot
 - Bet statuses: placed, won, lost, push, void
 - Parlay legs may settle independently as pending, hit, miss, or push before the overall parlay is decided
-- Automated result detection may propose supported outcomes, but commissioner apply/save remains required and payouts are never auto-filled
+- Automated result detection may display/propose supported outcomes, but commissioner apply/save remains required for canonical status and payouts are never auto-filled
 - Ties require commissioner resolution
 - Season payout projection: playoff champion 30%, each of the other three players 20%, Playoff Betting Fund 10%
 
