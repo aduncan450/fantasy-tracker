@@ -56,6 +56,10 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await expect(page.getByText(/Saved to isolated TEST MODE storage/)).toBeVisible();
 
   await page.reload();
+  // A completed Week 1 correctly advances the workflow to Week 2 after reload.
+  // Navigate back to Week 1 to assert the saved historical data persisted.
+  await expect(page.getByLabel('Week to edit')).toHaveValue('2');
+  await page.getByLabel('Week to edit').selectOption('1');
   await expect(scoreInput(page,'Duncan')).toHaveValue('120');
   await expect(scoreInput(page,'Jacob')).toHaveValue('100');
   await expect(page.getByText(/Week 1 · Jacob · \$10\.00/)).toBeVisible();
