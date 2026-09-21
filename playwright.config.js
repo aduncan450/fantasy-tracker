@@ -7,6 +7,6 @@ export default defineConfig({
   webServer:{command:'python3 -m http.server 4173',port:4173,reuseExistingServer:true},
   projects:[
     {name:'desktop-chromium',use:{...devices['Desktop Chrome']}},
-    {name:'iphone',use:{...devices['iPhone 15']}}
+    {name:'iphone-chromium',use:{...devices['iPhone 15'],browserName:'chromium'}}
   ]
 });
