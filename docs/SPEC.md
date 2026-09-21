@@ -27,6 +27,8 @@ Bets are indexed by the week in which they are placed. Weeks 1–16 can contain 
 
 The admin-only $5 bet stake adjustment records the actual PrizePicks amount wagered for each week with a $5 bet. Amount owed to the pot is `$5.00 - actual wager`, bounded from $0 to $5. It does not create ledger entries and is omitted from the public dashboard.
 
+Admin can also check supported bet descriptions against ESPN NFL scoreboard/box-score data. Result checking is review-first: it only proposes statuses for final games, never changes payouts, never changes the overall parlay status, and does not persist anything until the commissioner explicitly applies the detected statuses locally and then uses the normal admin save action. Unsupported/ambiguous descriptions or live games remain unchanged. Initial supported descriptions are rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, and team-to-win/moneyline wording.
+
 ## 6. Sleeper integration
 The Sleeper league ID is configured in code. There is no user-facing connection/authentication step because Sleeper league metadata and public matchup data require no persistent connection. Admin automatically loads league and roster metadata when available.
 
@@ -43,7 +45,9 @@ The commissioner portal requires the existing Supabase magic-link session. Sessi
 
 The admin can navigate Weeks 1–17 without changing the derived workflow week. For Weeks 1–16, matchup context and editable score inputs share one **Matchups & scores** card. Week 17 omits scores/matchups/Sleeper controls and retains betting/accounting controls only.
 
-The admin can edit scores, mark each derived due paid/unpaid, create/update bets, save individual parlay leg outcomes, track PrizePicks actual wagers, edit Sleeper roster mapping, sync Sleeper scores, export/import backups, and save all changes. Admin-only PrizePicks tracking participates in the same main save lifecycle.
+The admin can edit scores, mark each derived due paid/unpaid, create/update bets, save individual parlay leg outcomes, preview supported NFL bet results, apply detected statuses locally for commissioner review, track PrizePicks actual wagers, edit Sleeper roster mapping, sync Sleeper scores, export/import backups, and save all changes. Admin-only PrizePicks tracking participates in the same main save lifecycle.
+
+Automated bet-result checking is deliberately separate from persistence/accounting. The checker reads the currently entered bet descriptions, fetches the selected NFL week's ESPN scoreboard and box scores, and shows evidence for each proposal. **Check results** is read-only. **Apply detected statuses locally** only changes the current admin form/data in memory. Production Supabase and pot/accounting change only after the existing **Save all changes** action, exactly like other admin edits. Payout values and overall parlay status remain commissioner-entered.
 
 ## 8. Public dashboard
 The public dashboard loads canonical production Supabase data for accounting/history and may overlay current-week Sleeper matchups/scores for display only. TEST MODE data is never read by the public dashboard.
@@ -66,6 +70,8 @@ Supabase is authoritative for production. Preserve integer-cent money math, per-
 `validateLeague()` is the safety boundary for production loads/saves, TEST MODE persistence, and backup imports. It validates configured players, Weeks 1–17 and week types, regular-season matchups, playoff Weeks 15–16, Week 17 restrictions, scores, supported bets/statuses, parlay legs, payment keys, Sleeper roster mapping/sync state, PrizePicks actual-wager bounds, and explicit adjustments. Legacy projection fields may remain valid in older backups/data for backward compatibility, but the application no longer creates or displays projections.
 
 `normalizeLeague()` runs before validation on production data, TEST MODE data, and imports. It upgrades older valid data and migrates the superseded Week-16-final-betting shape into Week 17.
+
+Bet-result proposals are transient UI state and are not part of the league schema. No external result feed is allowed to write canonical league data directly.
 
 ## 12. Admin TEST MODE
 TEST MODE is an admin-only manual/end-to-end QA sandbox implemented at the persistence boundary.
@@ -92,12 +98,12 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 - Never rely on users clearing cache or hard-refreshing.
 
 ## 14. Source layout
-`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata, live reads, and score import; `js/public.js` public rendering and read-only live Sleeper overlay; `js/admin.js` admin UI, automatic Sleeper metadata load, score sync, Weeks 1–17 selector, betting and TEST MODE; `js/bet-adjustments-admin.js` admin-only PrizePicks UI; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows with mocked external APIs; `playwright.config.js` desktop/iPhone browser configuration; `.github/workflows/qa.yml` CI; `supabase/schema.sql` database/RLS bootstrap; `README.md`, `AGENTS.md`, and this spec are durable documentation.
+`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata, live reads, and score import; `js/bet-results.js` ESPN NFL result parsing/evaluation with no persistence side effects; `js/public.js` public rendering and read-only live Sleeper overlay; `js/admin.js` admin UI, automatic Sleeper metadata load, score sync, Weeks 1–17 selector, betting and TEST MODE; `js/bet-adjustments-admin.js` admin-only PrizePicks UI; `js/bet-results-admin.js` admin-only result preview/apply workflow; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows with mocked external APIs; `playwright.config.js` desktop/iPhone browser configuration; `.github/workflows/qa.yml` CI; `supabase/schema.sql` database/RLS bootstrap; `README.md`, `AGENTS.md`, and this spec are durable documentation.
 
 Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted rather than hidden or left as dead handlers.
 
 ## 15. Current implementation state
-Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, combined matchup/score entry, PrizePicks stake tracking, backward-compatible normalization/migration, isolated admin TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections have been removed.
+Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, admin-only ESPN bet-result preview/apply for supported final NFL outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, combined matchup/score entry, PrizePicks stake tracking, backward-compatible normalization/migration, isolated admin TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections have been removed.
 
 ## 16. Development workflow
 Work directly against `aduncan450/fantasy-tracker`, inspect current files before overwriting, make concrete commits, and report commit SHAs. Favor small understandable vanilla-JS changes. Use actual mobile screenshots as visual truth. Minimize human setup and assume the commissioner may be mobile-only.
@@ -124,12 +130,13 @@ Automated regression tests are the default repeatable QA layer. Run `npm test` w
 15. Frontend changes must invalidate changed browser-cached assets and transitive dependencies.
 16. Documentation must remain synchronized with implementation.
 17. Previously verified deterministic behavior should be protected by automated regression tests whenever practical; tests must never write production league data.
+18. External bet-result feeds may propose outcomes but must never directly write canonical league data, payouts, overall parlay status, or pot state.
 
 ## 18. Automated QA architecture
 The test suite deliberately stays lightweight and free to run in the public GitHub repository.
 
-- `node --test` exercises deterministic league behavior directly against production modules. Coverage includes matchup/dues rules, incomplete/tied weeks, Sleeper live/final gating, paid/unpaid accounting, payment reversal, historical score corrections, stake/payout math, parlay stats, Week 17 constraints, and legacy Week 16→17 migration.
-- Playwright serves the static app locally and intercepts Supabase/Sleeper requests. This lets browser tests exercise the real admin/public JavaScript without production writes, external API instability, or a second implementation of business rules.
-- Core browser scenarios run in desktop Chromium and an iPhone-sized project. Current coverage includes TEST MODE persistence/public isolation, payment/accounting behavior, historical corrections, public live Sleeper score rendering, and fallback when Sleeper is unavailable.
+- `node --test` exercises deterministic league behavior directly against production modules. Coverage includes matchup/dues rules, incomplete/tied weeks, Sleeper live/final gating, paid/unpaid accounting, payment reversal, historical score corrections, stake/payout math, parlay stats, Week 17 constraints, legacy Week 16→17 migration, bet-description parsing, player/team matching, final-game gating, and supported ESPN result evaluation.
+- Playwright serves the static app locally and intercepts Supabase/Sleeper/ESPN requests. This lets browser tests exercise the real admin/public JavaScript without production writes, external API instability, or a second implementation of business rules.
+- Core browser scenarios run in desktop Chromium and an iPhone-sized project. Current coverage includes TEST MODE persistence/public isolation, payment/accounting behavior, historical corrections, public live Sleeper score rendering, fallback when Sleeper is unavailable, and admin bet-result preview/apply without automatic payout or overall-parlay changes.
 - `.github/workflows/qa.yml` installs the test dependencies/browser and runs `npm test` on every push to `main` and on pull requests.
 - Manual QA findings that expose reproducible regressions should become automated regression tests whenever practical so they are not repeatedly rechecked by hand.
