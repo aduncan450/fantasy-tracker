@@ -1,72 +1,58 @@
-# Buff Husky Fantasy Tracker — Product & Technical Specification v4
-
-_Last consolidated: 2026-09-20. This is the living implementation specification and must be reviewed as part of every functional change._
+# Buff Husky Fantasy Tracker — Product & Technical Specification
 
 ## 1. Purpose
-Buff Husky Fantasy Tracker is a small, mobile-first fantasy-football league app for Duncan, Jacob, Matt, and Weston. The public dashboard is polished/read-only; `/admin/` is the authenticated commissioner interface. Priorities: minimal commissioner effort, data safety/traceability, mobile usability, maintainable vanilla JS, and effectively zero infrastructure cost.
+Buff Husky Fantasy Tracker is a small, free/static GitHub Pages + Supabase application for a four-person fantasy league. It tracks weekly fantasy results, loser-funded dues, the shared betting pot, weekly bets, parlay-leg performance, Sleeper scores/projections, season payouts, and commissioner-only PrizePicks actual-wager differences.
 
-## 2. Architecture
-- GitHub Pages static hosting; HTML/CSS/vanilla JS, no build step.
-- Supabase JSON league row is canonical production storage. Public may read; authenticated commissioner writes are protected by RLS.
-- Only the public/anon Supabase key may ship in frontend code.
-- Production league state never uses browser storage as canonical storage. `localStorage` stores the commissioner auth session and, only while TEST MODE is explicitly active, an isolated disposable test dataset.
-- `js/storage.js` is the persistence boundary and selects production Supabase or isolated TEST MODE persistence for the admin portal.
-- Magic-link redirect: `https://aduncan450.github.io/fantasy-tracker/admin/`.
-- Sessions persist locally and refresh with the Supabase refresh token shortly before expiry. A page refresh should not normally require a new magic link.
+The public dashboard is read-only. The commissioner portal is the only write UI. Production Supabase league data is canonical; localStorage must never become canonical production league storage.
 
-## 3. League configuration
-Season 2026–2027; starting pot $0; players Duncan, Jacob, Matt, Weston; regular season Weeks 1–14; fantasy playoffs are Weeks 15–16; Week 17 is a final betting-only period. Week 17 exists so returns from Week 16 bets can fund one last $10 parlay and $5 wager. It has no fantasy matchups, scores, dues, or Sleeper score/projection workflow.
+## 2. Players and season
+Configured players are Duncan, Jacob, Matt, and Weston. Weeks 1–14 are the regular season. Weeks 15–16 are fantasy playoffs. Week 17 is a final betting-only period so returns from the Week 16 playoff period can fund one final set of bets. Week 17 has no fantasy scores, matchups, dues, projections, or Sleeper score sync.
 
-Recurring regular-season matchup cycle: (1) Duncan–Matt / Jacob–Weston, (2) Duncan–Weston / Jacob–Matt, (3) Duncan–Jacob / Weston–Matt, repeated through Week 14 unless replaced by confirmed Sleeper matchups.
+## 3. Weekly dues
+For each completed regular-season week, the unique lowest scorer owes $10. The loser of the other matchup owes $5. A single player is never charged both weekly dues. A lowest-score tie or matchup tie requires commissioner resolution and generates no dues until corrected.
 
-Existing production rows and valid backups are normalized in memory to the current Weeks 1–17 shape before validation. Data created during the brief Week-16-final-betting implementation is migrated by converting Week 16 back to a playoff week and moving its betting-only data to Week 17. PrizePicks actual-wager tracking for that migrated week moves with it. The normalized shape becomes canonical the next time the commissioner saves.
+Dues are derived from scores and matchups; they are not stored as independent canonical charge rows. Payment status is stored per derived weekly charge using the player and charge amount. Editing historical scores therefore recalculates the applicable dues. Payment flags only continue to apply when the recalculated charge has the same player and amount.
 
-## 4. Weekly dues
-After all four regular-season scores are final, lowest overall scorer owes $10 and loser of the other matchup owes $5. Scores support two decimals. Ties stop automatic resolution. Each weekly charge has its own paid/unpaid state. Unpaid charges increase Unpaid/Owes but not the pot; paid charges increase Collected and the pot. Historical score changes recalculate derived dues.
+Incomplete or live Sleeper scores never generate dues. A score value of zero is allowed, but an entirely zero week is treated as incomplete rather than a final result.
 
-Weekly calculations fail closed if the matchup structure is malformed: a regular-season week must contain exactly two matchups and use all four configured players exactly once. Invalid matchup data must never silently generate dues. Weeks 15–17 do not create these regular-season dues.
+## 4. Pot accounting
+The pot is derived from ledger events and is never manually edited as a balance. Starting pot plus paid dues plus bet payouts plus explicit adjustments minus recorded bet stakes equals the current pot.
 
-## 5. Sleeper integration
-The commissioner can map all four Sleeper rosters to tracker players. Score sync may occur while games are live. A Sleeper sync stores the scores plus a finality flag derived from Sleeper's current NFL state. Synced scores do not resolve dues, advance the workflow week, enter season averages, or appear as completed results until Sleeper has advanced beyond the synced NFL week. Re-syncing after advancement marks that week's scores final. Manual score entry is an explicit commissioner override and removes the Sleeper sync/finality markers before applying the manually entered values.
+Unpaid dues are not cash and do not increase the pot. Recording a $10 parlay removes $10 from the pot. Recording a $5 bet removes $5. A bet payout is the total amount returned, not profit, and the full payout is added back to the pot. Push/void behavior is represented through the payout amount actually returned.
 
-Sleeper matchups can replace the default matchup cycle for the synced week. Projections are pulled separately, reviewed, and saved. Public upcoming matchups show season average and saved Sleeper projection with equal visual treatment.
+PrizePicks actual-wager differences are deliberately excluded from live pot accounting. They are season-end informational tracking only until an explicit settlement decision is made.
 
-In TEST MODE the real read-only Sleeper APIs are still used so mapping, score-sync/finality, and projection workflows can be exercised. Their results are written only into the isolated test dataset. Week 17 is intentionally excluded from Sleeper score and projection controls because it is betting-only.
+## 5. Weekly bets
+Each betting period can contain one $10 parlay and one $5 bet. The parlay has one leg per league player and each leg independently tracks pending, hit, miss, or push. Partial leg outcomes can be saved before the overall parlay settles. Overall bet status supports placed, won, lost, push, and void.
 
-## 6. Betting
-Standard weekly bets are a $10 parlay and a $5 bet. Bet statuses: `placed`, `won`, `lost`, `push`, `void`. Recording a bet removes its full funded stake from the pot. `payoutCents` is total cash returned, not profit, and is added in full.
+Bets are indexed by the week in which they are placed, not by the dues week that may have contributed cash to the pooled pot. Weeks 1–16 can contain the normal betting records alongside their fantasy-week data. Week 17 is betting-only.
 
-The $10 parlay has one leg per league player. Individual leg statuses are `pending`, `hit`, `miss`, `push` and may be saved as each leg settles independently of the overall parlay outcome. Public player cards summarize decided parlay legs and recent leg outcomes. Validation prevents duplicate players within structured parlay legs. Existing pre-leg-tracking $10 parlays stored as descriptions remain valid and are upgraded by the admin editor when edited.
+The admin-only $5 bet stake adjustment records the actual PrizePicks amount wagered for each week with a $5 bet. The amount owed to the pot is `$5.00 - actual wager`, bounded from $0 to $5. The season total is derived from those weekly values. It does not create ledger entries and is omitted from the public dashboard.
 
-Week 17 uses the same $10 parlay/$5 bet structure and the same stake/payout accounting as earlier betting weeks. It is explicitly betting-only: no matchup, score, due, payment, projection, or Sleeper state is valid there. The public Bets card shows Week 17 once a Week 17 bet exists; until then it continues to show the current workflow week's bets.
+## 6. Sleeper integration
+The configured Sleeper league is used for roster mapping, weekly matchup/score sync, and projections. The commissioner maps each of the four Sleeper rosters to a different configured tracker player. The mapping is stored in league data.
 
-### PrizePicks $5 stake adjustment
-PrizePicks may reduce the amount actually wagered below the $5 funded by the pot so the possible payout is an even dollar amount. The commissioner records the actual wager for each week containing a $5 bet, including Week 17. The difference `$5.00 - actual wager` is the amount the bet placer owes back to the pot at season end.
+Sleeper score sync can run while a week is live. Synced live scores and matchups may be displayed and saved, but dues stay locked until Sleeper has advanced beyond that NFL week. A synced week records its sync timestamp and finality state. Manually applying scores removes Sleeper sync/finality metadata so manual correction is explicit.
 
-This tracking is strictly admin-only during the season. `betPlacerActualBets` is canonical informational data, but its calculated amount owed is excluded from the public dashboard, ledger, current pot, payout projection, and all other live accounting. PrizePicks inputs mutate the same in-memory league object used by the rest of the admin portal and are persisted only by the portal's normal save lifecycle. The feature must never independently load/save a second full league copy. Saving these values must never create an adjustment transaction. Any legacy `season-bet-placer-adjustment` row is ignored by live ledger calculations and is removed when PrizePicks tracking is edited. Season-end settlement will be implemented explicitly when needed.
+Sleeper projections are pulled separately from scores, reviewed, and explicitly saved. Projection timestamps are stored separately from score-sync timestamps.
 
-## 7. Pot and payout semantics
-`current pot = starting pot + paid weekly dues - bet stakes + bet payouts + valid explicit adjustments`.
-Balance is derived and never directly editable. Public metrics include Balance, Collected, Unpaid, Week; player cards include $10 weeks, $5 weeks, parlay-leg results, and Owes.
+## 7. Admin portal
+The commissioner portal requires the existing Supabase magic-link session. Session tokens are persisted and refreshed before expiry so normal page refreshes do not require a new email on every visit. Authentication and RLS remain unchanged in TEST MODE.
 
-Week 17 bet stakes and payouts participate in the same ledger/pot calculation as every other bet. Week 17 itself contributes no dues.
+The admin can navigate directly among Weeks 1–17 without changing the derived workflow week. For Weeks 1–16, matchup context and editable score inputs are presented together in one **Matchups & scores** card so each score is visibly tied to its opponent while entering, reviewing, or syncing scores. The same score form and business logic are used for manual entry and Sleeper-synced data. Week 17 omits scores/matchups/Sleeper controls and retains betting/accounting controls only.
 
-Current-pot projection: 30% playoff champion, 20% each other player, 10% Playoff Betting Fund. The 10% is for gambling on this season's playoffs after the fantasy league ends, not a fee or next-season reserve. Rounding must reconcile exactly to the pot.
+The admin can edit scores, mark each derived weekly due paid/unpaid, create/update bets, save individual parlay leg outcomes, track PrizePicks actual wagers, connect/map/sync Sleeper, pull/save projections, export/import backups, and save all changes. Admin-only PrizePicks tracking is rendered separately but participates in the same main save lifecycle.
 
-## 8. Canonical vs derived data
-Canonical production data: season config, players, weekly records including playoff Weeks 15–16 and betting-only Week 17, weekly matchups/scores where applicable, score-finality state, payments, bets/legs/statuses/payouts, Sleeper roster mapping, saved projections/sync timestamps, PrizePicks actual wagers, explicit legitimate adjustments, playoff results, metadata.
+## 8. Public dashboard
+The public dashboard is read-only and always loads production Supabase data. It shows the current pot, current fantasy week/status, player summaries, unpaid dues, recent results, betting information, parlay performance, season payout projection, and commissioner last-updated time. TEST MODE data is never read by the public dashboard.
 
-Derived: matchup results, dues, player counts/owes, parlay hit-rate summary, collected/unpaid totals, PrizePicks amount owed, ledger, pot, workflow week, averages, payout projections.
+When Week 17 contains betting activity, the public betting area identifies it as the final betting week. Week 17 must not be presented as a fantasy matchup/scoring week.
 
-TEST MODE contains a disposable validated copy of the same canonical data shape so the same schema, calculations, Sleeper code, admin forms, import/export, and save workflows are exercised without creating a second business-logic implementation.
+## 9. Season payout
+The season payout split is 30% playoff winner, 20% to each of the other three players, and 10% reserved for the current season's Playoff Betting Fund. The 10% is not a generic next-season fund.
 
-## 9. Last updated
-`metadata.lastUpdated` means the last successful save through the active persistence target. In production this is the last successful commissioner save to Supabase and drives the public Updated display. In TEST MODE it is test-only metadata and is never visible publicly. Public page loads/refreshes never modify production `lastUpdated`.
-
-## 10. UX invariants
-Mobile-first dark sports aesthetic, green accent, dense/readable cards, symmetric gutters, no accidental horizontal overflow. Most labels/headings are uppercase but people's names remain title case; uppercase typography should be compact. Public is read-only and visually polished. Admin may be utilitarian but must remain comfortable on an iPhone. Local edits must clearly distinguish themselves from saved state.
-
-The admin portal defaults to the derived workflow week but includes an explicit week selector so the commissioner can return to prior weeks or select Weeks 15–17 to review/edit applicable data. Selecting a week is only a view/edit choice and must not change the derived workflow week itself. Weeks 15–16 are playoff weeks. When Week 17 is selected, score, matchup, projection, and Sleeper controls are not shown; betting and historical dues/payment controls remain available.
+## 10. Presentation rules
+Names remain normal case. Most labels/headings use the established uppercase visual treatment. Mobile layouts must remain comfortable on an iPhone. Equal-information score/projection fields should have equal visible widths. Avoid arbitrary wrapping that makes paired values appear unrelated. The TEST MODE warning treatment must remain unmistakable and the Exit & discard control must remain legible.
 
 TEST MODE must be unmistakable: the admin page uses a yellow warning treatment, persistent TEST MODE banner, and explicit copy that production Supabase is not being written. Reset and Exit & discard controls are available at the top and are sized for mobile use.
 
@@ -103,12 +89,12 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 - Never rely on users clearing cache or hard-refreshing.
 
 ## 14. Source layout
-`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styles plus TEST MODE warning treatment; `js/config.js` public config; `js/schema.js` initial data, Weeks 16–17 normalization/migration, and validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth, data normalization, and TEST MODE persistence boundary; `js/sleeper.js` Sleeper API; `js/public.js` public rendering including current/final betting-week display; `js/admin.js` core admin UI, shared in-memory admin state, Weeks 1–17 selector, betting-only Week 17 behavior, and TEST MODE controls; `js/bet-adjustments-admin.js` admin-only weekly PrizePicks UI operating on that shared state; `supabase/schema.sql` database/RLS bootstrap; `README.md` concise repository overview; `AGENTS.md` standing implementation instructions; this file is the living product/technical specification.
+`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styles plus TEST MODE warning treatment; `js/config.js` public config; `js/schema.js` initial data, Weeks 16–17 normalization/migration, and validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth, data normalization, and TEST MODE persistence boundary; `js/sleeper.js` Sleeper API; `js/public.js` public rendering including current/final betting-week display; `js/admin.js` core admin UI, shared in-memory admin state, Weeks 1–17 selector, combined matchup/score editor, betting-only Week 17 behavior, and TEST MODE controls; `js/bet-adjustments-admin.js` admin-only weekly PrizePicks UI operating on that shared state; `supabase/schema.sql` database/RLS bootstrap; `README.md` concise repository overview; `AGENTS.md` standing implementation instructions; this file is the living product/technical specification.
 
 Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted, not hidden with DOM cleanup or left as dead handlers. Unused exported workflow helpers should likewise be removed rather than retained speculatively.
 
 ## 15. Current implementation state
-Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, Sleeper score sync with live/final gating, Sleeper projections, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, admin-only PrizePicks stake tracking, backward-compatible Weeks 16–17 normalization/migration, and isolated admin TEST MODE exist. The project is in enhancement/QA phase, not initial architecture design.
+Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, Sleeper score sync with live/final gating, Sleeper projections, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, combined matchup/score entry, admin-only PrizePicks stake tracking, backward-compatible Weeks 16–17 normalization/migration, and isolated admin TEST MODE exist. The project is in enhancement/QA phase, not initial architecture design.
 
 ## 16. Development workflow
 Future sessions should work directly against `aduncan450/fantasy-tracker` when GitHub access is available, inspect current files before overwriting, make concrete commits, and report commit SHAs. Favor small understandable vanilla-JS changes. Use actual mobile screenshots as visual truth. Minimize human setup and assume the commissioner may be mobile-only.
@@ -133,12 +119,3 @@ For manual/runtime QA, use TEST MODE for destructive/admin workflow scenarios fi
 13. PrizePicks actual-stake differences are admin-only informational tracking until explicit season-end settlement and never affect live pot accounting.
 14. Frontend changes must invalidate every changed browser-cached asset, including transitive ES-module dependencies.
 15. Documentation must remain synchronized with implementation as part of each change.
-16. Malformed matchup or canonical data must fail validation/calculation safely rather than generate financial results.
-17. Sleeper-synced live scores must not create dues or completed-week statistics until the synced week is final.
-18. Admin features that edit canonical league data must share the main admin in-memory/save lifecycle rather than independently loading and saving the full league row.
-19. TEST MODE must never write the production league row or expose test data through the public dashboard.
-20. TEST MODE must exercise the same league data shape, validation, calculations, admin workflows, and external Sleeper reads as production wherever applicable.
-21. Admin historical-week navigation is a view/edit selection only and must not alter the derived workflow week.
-22. Weeks 15 and 16 are fantasy playoff weeks.
-23. Week 17 is betting-only: it may contain the normal weekly bets and PrizePicks actual-wager tracking but never fantasy matchups, scores, projections, dues, payments, or Sleeper score/projection state.
-24. Older valid league data, including the superseded Week-16-final-betting shape, must be normalized safely before validation rather than rejected solely for missing or misclassifying the new end-of-season weeks.
