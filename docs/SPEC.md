@@ -1,6 +1,6 @@
 # Buff Husky Fantasy Tracker — Product & Technical Specification v4
 
-_Last consolidated: 2026-09-19. This is the living implementation specification and must be reviewed as part of every functional change._
+_Last consolidated: 2026-09-20. This is the living implementation specification and must be reviewed as part of every functional change._
 
 ## 1. Purpose
 Buff Husky Fantasy Tracker is a small, mobile-first fantasy-football league app for Duncan, Jacob, Matt, and Weston. The public dashboard is polished/read-only; `/admin/` is the authenticated commissioner interface. Priorities: minimal commissioner effort, data safety/traceability, mobile usability, maintainable vanilla JS, and effectively zero infrastructure cost.
@@ -58,6 +58,8 @@ TEST MODE contains a disposable validated copy of the same canonical data shape 
 ## 10. UX invariants
 Mobile-first dark sports aesthetic, green accent, dense/readable cards, symmetric gutters, no accidental horizontal overflow. Most labels/headings are uppercase but people's names remain title case; uppercase typography should be compact. Public is read-only and visually polished. Admin may be utilitarian but must remain comfortable on an iPhone. Local edits must clearly distinguish themselves from saved state.
 
+The admin portal defaults to the derived workflow week but includes an explicit week selector so the commissioner can return to prior weeks to review or edit historical scores, bets, projections, and related data. Selecting a historical week must not change the derived workflow week itself.
+
 TEST MODE must be unmistakable: the admin page uses a yellow warning treatment, persistent TEST MODE banner, and explicit copy that production Supabase is not being written. Reset and Exit & discard controls are available at the top and are sized for mobile use.
 
 ## 11. Data safety and validation
@@ -73,6 +75,7 @@ TEST MODE is an admin-only manual/end-to-end QA sandbox implemented at the persi
 - On entry, the seed is validated and stored separately from the mutable test working copy. The seed enables reliable reset to the exact starting snapshot.
 - While active, admin loads and all admin save paths use the isolated test working copy in `localStorage`; no league write request is sent to Supabase. This includes Save test changes, saved Sleeper projections, and partial parlay-leg saves.
 - TEST MODE persists across page refreshes in the same browser so refresh/session behavior can be tested without losing the scenario.
+- The admin week selector allows QA to move backward and forward through Weeks 1–15 without altering the derived workflow week.
 - **Reset test data** discards mutations and restores the original test seed. **Exit & discard** deletes all test-mode league keys and reloads production from Supabase.
 - The public dashboard never reads TEST MODE keys and continues to read the production Supabase row, so test changes cannot leak onto the public dashboard.
 - Backup export exports the active test dataset with a test-specific filename. Backup import runs the same production validation and replaces only the in-memory test data until the test save action is used.
@@ -90,12 +93,12 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 - Never rely on users clearing cache or hard-refreshing.
 
 ## 14. Source layout
-`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styles plus TEST MODE warning treatment; `js/config.js` public config; `js/schema.js` initial data + validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper API; `js/public.js` public rendering; `js/admin.js` core admin UI, shared in-memory admin state, and TEST MODE controls; `js/bet-adjustments-admin.js` admin-only weekly PrizePicks UI operating on that shared state; `supabase/schema.sql` database/RLS bootstrap; `README.md` concise repository overview; `AGENTS.md` standing implementation instructions; this file is the living product/technical specification.
+`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styles plus TEST MODE warning treatment; `js/config.js` public config; `js/schema.js` initial data + validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper API; `js/public.js` public rendering; `js/admin.js` core admin UI, shared in-memory admin state, historical week selector, and TEST MODE controls; `js/bet-adjustments-admin.js` admin-only weekly PrizePicks UI operating on that shared state; `supabase/schema.sql` database/RLS bootstrap; `README.md` concise repository overview; `AGENTS.md` standing implementation instructions; this file is the living product/technical specification.
 
 Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted, not hidden with DOM cleanup or left as dead handlers. Unused exported workflow helpers should likewise be removed rather than retained speculatively.
 
 ## 15. Current implementation state
-Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, per-leg parlay outcomes, Sleeper score sync with live/final gating, Sleeper projections, season payout projection, backups, commissioner-save timestamp semantics, admin-only PrizePicks stake tracking, and isolated admin TEST MODE exist. The project is in enhancement/QA phase, not initial architecture design.
+Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, per-leg parlay outcomes, Sleeper score sync with live/final gating, Sleeper projections, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, admin-only PrizePicks stake tracking, and isolated admin TEST MODE exist. The project is in enhancement/QA phase, not initial architecture design.
 
 ## 16. Development workflow
 Future sessions should work directly against `aduncan450/fantasy-tracker` when GitHub access is available, inspect current files before overwriting, make concrete commits, and report commit SHAs. Favor small understandable vanilla-JS changes. Use actual mobile screenshots as visual truth. Minimize human setup and assume the commissioner may be mobile-only.
@@ -125,3 +128,4 @@ For manual/runtime QA, use TEST MODE for destructive/admin workflow scenarios fi
 18. Admin features that edit canonical league data must share the main admin in-memory/save lifecycle rather than independently loading and saving the full league row.
 19. TEST MODE must never write the production league row or expose test data through the public dashboard.
 20. TEST MODE must exercise the same league data shape, validation, calculations, admin workflows, and external Sleeper reads as production wherever applicable.
+21. Admin historical-week navigation is a view/edit selection only and must not alter the derived workflow week.
