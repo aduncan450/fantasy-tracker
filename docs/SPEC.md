@@ -92,19 +92,19 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 - Never rely on users clearing cache or hard-refreshing.
 
 ## 14. Source layout
-`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata, live reads, and score import; `js/public.js` public rendering and read-only live Sleeper overlay; `js/admin.js` admin UI, automatic Sleeper metadata load, score sync, Weeks 1–17 selector, betting and TEST MODE; `js/bet-adjustments-admin.js` admin-only PrizePicks UI; `supabase/schema.sql` database/RLS bootstrap; `README.md`, `AGENTS.md`, and this spec are durable documentation.
+`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata, live reads, and score import; `js/public.js` public rendering and read-only live Sleeper overlay; `js/admin.js` admin UI, automatic Sleeper metadata load, score sync, Weeks 1–17 selector, betting and TEST MODE; `js/bet-adjustments-admin.js` admin-only PrizePicks UI; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows with mocked external APIs; `playwright.config.js` desktop/iPhone browser configuration; `.github/workflows/qa.yml` CI; `supabase/schema.sql` database/RLS bootstrap; `README.md`, `AGENTS.md`, and this spec are durable documentation.
 
 Business rules belong in calculation/schema/storage modules rather than UI rendering code. Superseded implementations should be deleted rather than hidden or left as dead handlers.
 
 ## 15. Current implementation state
-Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, combined matchup/score entry, PrizePicks stake tracking, backward-compatible normalization/migration, and isolated admin TEST MODE exist. Sleeper projections have been removed.
+Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, combined matchup/score entry, PrizePicks stake tracking, backward-compatible normalization/migration, isolated admin TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections have been removed.
 
 ## 16. Development workflow
 Work directly against `aduncan450/fantasy-tracker`, inspect current files before overwriting, make concrete commits, and report commit SHAs. Favor small understandable vanilla-JS changes. Use actual mobile screenshots as visual truth. Minimize human setup and assume the commissioner may be mobile-only.
 
 Every implementation change requires a documentation-impact check. Update this spec whenever behavior, data shape, invariants, architecture, deployment procedure, or supported workflow changes. Update README when the concise overview changes. Update `AGENTS.md` when a standing engineering lesson/rule changes.
 
-For manual/runtime QA, use TEST MODE for destructive/admin scenarios. The production public page may be used to verify its read-only live Sleeper overlay because that overlay never writes league data.
+Automated regression tests are the default repeatable QA layer. Run `npm test` when possible and add/update tests alongside changes to covered behavior. Manual TEST MODE QA is reserved for visual judgment, real-device ergonomics, read-only live integration checks, and novel workflows not yet automated.
 
 ## 17. Core invariants
 1. Unpaid dues are not cash in the pot.
@@ -123,3 +123,13 @@ For manual/runtime QA, use TEST MODE for destructive/admin scenarios. The produc
 14. Public live Sleeper data is display-only and never canonical accounting state.
 15. Frontend changes must invalidate changed browser-cached assets and transitive dependencies.
 16. Documentation must remain synchronized with implementation.
+17. Previously verified deterministic behavior should be protected by automated regression tests whenever practical; tests must never write production league data.
+
+## 18. Automated QA architecture
+The test suite deliberately stays lightweight and free to run in the public GitHub repository.
+
+- `node --test` exercises deterministic league behavior directly against production modules. Coverage includes matchup/dues rules, incomplete/tied weeks, Sleeper live/final gating, paid/unpaid accounting, payment reversal, historical score corrections, stake/payout math, parlay stats, Week 17 constraints, and legacy Week 16→17 migration.
+- Playwright serves the static app locally and intercepts Supabase/Sleeper requests. This lets browser tests exercise the real admin/public JavaScript without production writes, external API instability, or a second implementation of business rules.
+- Core browser scenarios run in desktop Chromium and an iPhone-sized project. Current coverage includes TEST MODE persistence/public isolation, payment/accounting behavior, historical corrections, public live Sleeper score rendering, and fallback when Sleeper is unavailable.
+- `.github/workflows/qa.yml` installs the test dependencies/browser and runs `npm test` on every push to `main` and on pull requests.
+- Manual QA findings that expose reproducible regressions should become automated regression tests whenever practical so they are not repeatedly rechecked by hand.
