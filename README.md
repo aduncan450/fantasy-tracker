@@ -14,6 +14,18 @@
 - Derived state: dues, pot balance, player summaries, and week status are calculated from canonical inputs
 - Sleeper: configured league metadata, roster mapping, live public scores, and commissioner final-score sync
 
+## Automated QA
+
+The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
+
+- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, and legacy week normalization.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, and graceful Sleeper fallback.
+- `npm test` runs both layers.
+- Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
+- `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
+
+The tests mock external writes and APIs; they do not modify the production Supabase league row. Manual TEST MODE QA remains useful for visual judgment and genuinely new workflows, but existing covered behavior should be protected by automated tests first.
+
 ## Sleeper behavior
 
 The Sleeper league ID is configured in the app, so there is no persistent "connect" step. The admin automatically loads league/roster metadata. Roster mapping is setup/correction data and can be edited when needed.
