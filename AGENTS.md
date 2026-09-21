@@ -32,6 +32,21 @@ GitHub Pages/mobile-browser caching has caused real stale-asset behavior in prod
 4. Keep the existing no-cache HTML meta directives.
 5. Never make manual cache clearing or hard refresh a required deployment step for end users.
 
+## Automated QA is the default regression layer
+
+Routine regression coverage belongs in code, not repeated manual checklists.
+
+1. Run `npm test` for implementation changes when the environment allows it.
+2. Add or update unit tests for changes to calculations, validation, normalization, accounting, finality, or other deterministic business rules.
+3. Add or update Playwright tests for browser workflows that can be exercised safely with mocked Supabase/Sleeper responses.
+4. Existing automated coverage must remain green before considering a change complete.
+5. `.github/workflows/qa.yml` runs the suite on `main` pushes and pull requests; do not weaken or bypass it to land a change.
+6. Tests must not write production Supabase data. Browser tests should mock external APIs unless the specific purpose is a read-only integration check.
+7. Keep both desktop Chromium and iPhone-sized browser coverage for core flows.
+8. When a manual QA session discovers a reproducible regression, add an automated regression test for it whenever practical before or with the fix.
+
+Manual testing remains appropriate for visual judgment, real-device ergonomics, and novel workflows not yet represented in the suite, but it should not be the primary way previously verified business behavior is rechecked.
+
 ## QA expectations
 
 Before considering a change complete, check for consistency across:
