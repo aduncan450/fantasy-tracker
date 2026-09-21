@@ -1,5 +1,5 @@
-import {loadLeague} from './storage.js?v=20260920-week16b';
-import {money,pot,currentWeek,weekResult,ledger,playerStats,duesSummary} from './calculations.js?v=20260920-week16b';
+import {loadLeague} from './storage.js?v=20260920-week17';
+import {money,pot,currentWeek,weekResult,ledger,playerStats,duesSummary} from './calculations.js?v=20260920-week17';
 
 const app=document.querySelector('#app'),sync=document.querySelector('#sync');
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
