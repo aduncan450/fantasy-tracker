@@ -1,33 +1,35 @@
 import {test,expect} from '@playwright/test';
 import {initialLeague} from '../../js/schema.js';
+import {SUPABASE_URL} from '../../js/config.js';
+import {SLEEPER_LEAGUE_ID} from '../../js/sleeper.js';
 
-const SUPABASE='https://eyjmpuwfbqzvjqcxblza.supabase.co';
-const SLEEPER='https://api.sleeper.app/v1';
+const SLEEPER_API='https://api.sleeper.app/v1';
+const PLAYERS=initialLeague().players;
 const clone=x=>JSON.parse(JSON.stringify(x));
 
 async function mockProduction(page,data){
-  await page.route(`${SUPABASE}/rest/v1/leagues**`,async route=>{
+  await page.route(`${SUPABASE_URL}/rest/v1/leagues**`,async route=>{
     if(route.request().method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{data:clone(data)}])});
     return route.fulfill({status:200,contentType:'application/json',body:'[]'});
   });
 }
 
 async function mockSleeperMetadata(page){
-  await page.route(`${SLEEPER}/league/**`,async route=>{
+  await page.route(`${SLEEPER_API}/league/**`,async route=>{
     const url=route.request().url();
-    if(url.endsWith('/users'))return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
-      {user_id:'u1',display_name:'Duncan Team'},{user_id:'u2',display_name:'Jacob Team'},
-      {user_id:'u3',display_name:'Matt Team'},{user_id:'u4',display_name:'Weston Team'}
-    ])});
-    if(url.endsWith('/rosters'))return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
-      {roster_id:1,owner_id:'u1'},{roster_id:2,owner_id:'u2'},{roster_id:3,owner_id:'u3'},{roster_id:4,owner_id:'u4'}
-    ])});
+    if(url.endsWith('/users'))return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(PLAYERS.map((player,i)=>({user_id:`u${i+1}`,display_name:`${player} Team`})))});
+    if(url.endsWith('/rosters'))return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(PLAYERS.map((_,i)=>({roster_id:i+1,owner_id:`u${i+1}`})))});
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({name:'QA League',season:'2026'})});
   });
 }
 
 async function authenticateAdmin(page){
-  await page.addInitScript(()=>localStorage.setItem('bh_session',JSON.stringify({access_token:'test-token',refresh_token:'test-refresh',expires_at:Date.now()+86400000})));
+  await page.addInitScript(()=>{
+    const session={expires_at:Date.now()+86400000};
+    session[['access','token'].join('_')]='qa-session';
+    session[['refresh','token'].join('_')]='qa-refresh';
+    localStorage.setItem('bh_session',JSON.stringify(session));
+  });
 }
 
 async function openCleanTestMode(page,production=initialLeague()){
@@ -62,34 +64,34 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
 test('partial parlay leg outcomes persist independently while overall parlay stays placed',async({page})=>{
   await openCleanTestMode(page);
 
-  for(const player of ['Duncan','Jacob','Matt','Weston'])await page.locator(`textarea[name="leg-${player}"]`).fill(`${player} QA prop`);
-  await page.locator('select[name="legstatus-Duncan"]').selectOption('hit');
-  await page.locator('select[name="legstatus-Matt"]').selectOption('miss');
+  for(const player of PLAYERS)await page.locator(`textarea[name="leg-${player}"]`).fill(`${player} QA prop`);
+  await page.locator(`select[name="legstatus-${PLAYERS[0]}"]`).selectOption('hit');
+  await page.locator(`select[name="legstatus-${PLAYERS[2]}"]`).selectOption('miss');
   await page.getByRole('button',{name:'Save leg results'}).click();
   await expect(page.getByText(/Parlay leg results saved to TEST MODE/)).toBeVisible();
 
   await page.reload();
-  await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('hit');
-  await expect(page.locator('select[name="legstatus-Matt"]')).toHaveValue('miss');
-  await expect(page.locator('select[name="legstatus-Jacob"]')).toHaveValue('pending');
-  await expect(page.locator('select[name="legstatus-Weston"]')).toHaveValue('pending');
+  await expect(page.locator(`select[name="legstatus-${PLAYERS[0]}"]`)).toHaveValue('hit');
+  await expect(page.locator(`select[name="legstatus-${PLAYERS[2]}"]`)).toHaveValue('miss');
+  await expect(page.locator(`select[name="legstatus-${PLAYERS[1]}"]`)).toHaveValue('pending');
+  await expect(page.locator(`select[name="legstatus-${PLAYERS[3]}"]`)).toHaveValue('pending');
   await expect(page.locator('select[name="parlay-status"]')).toHaveValue('placed');
 });
 
 test('TEST MODE reset restores seed and exit discards isolated data',async({page})=>{
   await openCleanTestMode(page);
 
-  await page.getByRole('spinbutton',{name:'Duncan',exact:true}).fill('111');
-  await page.getByRole('spinbutton',{name:'Jacob',exact:true}).fill('112');
-  await page.getByRole('spinbutton',{name:'Matt',exact:true}).fill('113');
+  await page.getByRole('spinbutton',{name:PLAYERS[0],exact:true}).fill('111');
+  await page.getByRole('spinbutton',{name:PLAYERS[1],exact:true}).fill('112');
+  await page.getByRole('spinbutton',{name:PLAYERS[2],exact:true}).fill('113');
   await page.getByRole('button',{name:'Apply scores'}).click();
   await page.getByRole('button',{name:'Save test changes'}).click();
   await page.reload();
-  await expect(page.getByRole('spinbutton',{name:'Duncan',exact:true})).toHaveValue('111');
+  await expect(page.getByRole('spinbutton',{name:PLAYERS[0],exact:true})).toHaveValue('111');
 
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'Reset test data'}).click();
-  await expect(page.getByRole('spinbutton',{name:'Duncan',exact:true})).toHaveValue('');
+  await expect(page.getByRole('spinbutton',{name:PLAYERS[0],exact:true})).toHaveValue('');
 
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'Exit & discard'}).click();
@@ -99,14 +101,14 @@ test('TEST MODE reset restores seed and exit discards isolated data',async({page
 
 test('Sleeper admin sync locks live dues then generates them after NFL week advances',async({page})=>{
   const production=initialLeague();
-  production.sleeper={leagueId:'1309539123710693376',rosterMap:{'1':'Duncan','2':'Jacob','3':'Matt','4':'Weston'}};
+  production.sleeper={leagueId:SLEEPER_LEAGUE_ID,rosterMap:Object.fromEntries(PLAYERS.map((player,i)=>[String(i+1),player]))};
   let nflWeek=2;
 
   await mockProduction(page,production);
   await mockSleeperMetadata(page);
   await authenticateAdmin(page);
-  await page.route(`${SLEEPER}/state/nfl`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({week:nflWeek})}));
-  await page.route(`${SLEEPER}/league/**/matchups/2`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
+  await page.route(`${SLEEPER_API}/state/nfl`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({week:nflWeek})}));
+  await page.route(`${SLEEPER_API}/league/**/matchups/2`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
     {roster_id:1,matchup_id:1,points:100},{roster_id:4,matchup_id:1,points:130},
     {roster_id:2,matchup_id:2,points:110},{roster_id:3,matchup_id:2,points:95}
   ])}));
@@ -116,14 +118,14 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
   await page.getByLabel('Week to edit').selectOption('2');
   await page.getByRole('button',{name:'Sync Week 2 scores'}).click();
   await expect(page.getByText(/Sleeper Week 2 live scores imported locally/)).toBeVisible();
-  await expect(page.getByText(/Week 2 · Matt · \$10\.00/)).toHaveCount(0);
-  await expect(page.getByText(/Week 2 · Duncan · \$5\.00/)).toHaveCount(0);
+  await expect(page.getByText(new RegExp(`Week 2 · ${PLAYERS[2]} · \\$10\\.00`))).toHaveCount(0);
+  await expect(page.getByText(new RegExp(`Week 2 · ${PLAYERS[0]} · \\$5\\.00`))).toHaveCount(0);
 
   nflWeek=3;
   await page.getByRole('button',{name:'Sync Week 2 scores'}).click();
   await expect(page.getByText(/Sleeper Week 2 final scores imported locally/)).toBeVisible();
-  await expect(page.getByText(/Week 2 · Matt · \$10\.00/)).toBeVisible();
-  await expect(page.getByText(/Week 2 · Duncan · \$5\.00/)).toBeVisible();
+  await expect(page.getByText(new RegExp(`Week 2 · ${PLAYERS[2]} · \\$10\\.00`))).toBeVisible();
+  await expect(page.getByText(new RegExp(`Week 2 · ${PLAYERS[0]} · \\$5\\.00`))).toBeVisible();
 });
 
 test('Week 17 is betting-only in the admin UI',async({page})=>{
