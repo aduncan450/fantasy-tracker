@@ -13,6 +13,7 @@ function collectCurrent(){const bridge=admin();if(!bridge?.isAuthenticated?.())r
 function updateVisibleTotals(data){collect(data);for(const w of trackedWeeks(data)){const el=document.querySelector(`[data-owed-week="${w.week}"]`);if(el){const owed=owedFor(data,w.week);el.textContent=owed===null?'—':money(owed)}}const total=document.querySelector('#bet-adjustment-total');if(total)total.textContent=money(totalOwed(data))}
 function render(){if(rendering)return;rendering=true;try{const bridge=admin(),app=document.querySelector('#app');document.querySelector('#weekly-bet-adjustments')?.remove();if(!bridge?.isAuthenticated?.()||!app)return;const data=bridge.getData();app.insertAdjacentHTML('beforeend',card(data));document.querySelectorAll('#weekly-bet-adjustments .actual-bet').forEach(input=>input.addEventListener('input',()=>{try{updateVisibleTotals(data)}catch(e){input.setCustomValidity(e.message);input.reportValidity();input.setCustomValidity('')}}))}finally{rendering=false}}
 window.__fantasyBetAdjustments={collect:collectCurrent};
+document.addEventListener('click',e=>{if(e.target.closest?.('#save'))collectCurrent()},true);
 const app=document.querySelector('#app');
 const observer=new MutationObserver(()=>{if(rendering||document.querySelector('#weekly-bet-adjustments')||renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;if(!document.querySelector('#weekly-bet-adjustments'))render()})});
 observer.observe(app,{childList:true});
