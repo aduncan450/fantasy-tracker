@@ -28,9 +28,10 @@ GitHub Pages/mobile-browser caching has caused real stale-asset behavior in prod
 
 1. Any change to an HTML-referenced CSS or JavaScript entry asset must include the corresponding `?v=` cache-busting version bump in every HTML page that loads it.
 2. `styles.css` is shared by public and admin pages; changing it requires bumping the stylesheet version in both HTML files.
-3. Review transitive ES-module imports when changing imported modules. An HTML query-string change on an entry module does not automatically prove that every imported module has been invalidated in every browser cache.
-4. Keep the existing no-cache HTML meta directives.
-5. Never make manual cache clearing or hard refresh a required deployment step for end users.
+3. Admin-only CSS may use a separate versioned stylesheet loaded only by `admin/index.html`; changing it still requires a new URL there.
+4. Review transitive ES-module imports when changing imported modules. An HTML query-string change on an entry module does not automatically prove that every imported module has been invalidated in every browser cache.
+5. Keep the existing no-cache HTML meta directives.
+6. Never make manual cache clearing or hard refresh a required deployment step for end users.
 
 ## Automated QA is the default regression layer
 
@@ -46,6 +47,17 @@ Routine regression coverage belongs in code, not repeated manual checklists.
 8. When a manual QA session discovers a reproducible regression, add an automated regression test for it whenever practical before or with the fix.
 
 Manual testing remains appropriate for visual judgment, real-device ergonomics, and novel workflows not yet represented in the suite, but it should not be the primary way previously verified business behavior is rechecked.
+
+## Admin mutation and dirty-state discipline
+
+The admin portal protects in-memory changes that have not yet reached the active persistence target.
+
+1. Any new admin path that mutates league data without immediately persisting it must participate in the existing dirty-state mechanism and expose the unsaved warning/sticky save behavior.
+2. Keep unsaved-state behavior centralized in the admin quality-of-life layer. New admin companion modules must emit ordinary DOM events or otherwise integrate with that layer rather than inventing a separate dirty-state implementation.
+3. Successful production or TEST MODE persistence must clear dirty state; failed saves must leave it dirty.
+4. Browser unloads and destructive actions that can discard dirty data must remain guarded.
+5. Track raw form typing that still requires its existing **Apply** action as unapplied draft state, not dirty league state. Warn before discarding that draft, and reserve the sticky save indicator for data the main save path can actually persist.
+6. Weekly closeout and week-selector attention markers are derived UI state only. Do not add schema fields or persistence solely to store those indicators.
 
 ## QA expectations
 
