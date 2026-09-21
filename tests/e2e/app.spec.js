@@ -5,6 +5,7 @@ const SUPABASE='https://eyjmpuwfbqzvjqcxblza.supabase.co';
 const SLEEPER='https://api.sleeper.app/v1';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const week=(d,n)=>d.weeks.find(w=>w.week===n);
+const scoreInput=(page,name)=>page.getByRole('spinbutton',{name,exact:true});
 
 async function mockProduction(page,data){
   await page.route(`${SUPABASE}/rest/v1/leagues**`,async route=>{
@@ -43,10 +44,10 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await page.getByRole('button',{name:'Test clean league'}).click();
   await expect(page.getByText('TEST MODE',{exact:true}).first()).toBeVisible();
 
-  await page.getByLabel('Duncan').fill('120');
-  await page.getByLabel('Matt').fill('110');
-  await page.getByLabel('Jacob').fill('100');
-  await page.getByLabel('Weston').fill('130');
+  await scoreInput(page,'Duncan').fill('120');
+  await scoreInput(page,'Matt').fill('110');
+  await scoreInput(page,'Jacob').fill('100');
+  await scoreInput(page,'Weston').fill('130');
   await page.getByRole('button',{name:'Apply scores'}).click();
 
   await expect(page.getByText(/Week 1 · Jacob · \$10\.00/)).toBeVisible();
@@ -55,8 +56,8 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await expect(page.getByText(/Saved to isolated TEST MODE storage/)).toBeVisible();
 
   await page.reload();
-  await expect(page.getByLabel('Duncan')).toHaveValue('120');
-  await expect(page.getByLabel('Jacob')).toHaveValue('100');
+  await expect(scoreInput(page,'Duncan')).toHaveValue('120');
+  await expect(scoreInput(page,'Jacob')).toHaveValue('100');
   await expect(page.getByText(/Week 1 · Jacob · \$10\.00/)).toBeVisible();
 
   await page.goto('/');
@@ -73,10 +74,10 @@ test('TEST MODE payment accounting reverses cleanly and historical score edits d
   await page.goto('/admin/');
   await page.getByRole('button',{name:'Test clean league'}).click();
   await page.getByLabel('Week to edit').selectOption('2');
-  await page.getByLabel('Duncan').fill('125');
-  await page.getByLabel('Jacob').fill('110');
-  await page.getByLabel('Matt').fill('95');
-  await page.getByLabel('Weston').fill('130');
+  await scoreInput(page,'Duncan').fill('125');
+  await scoreInput(page,'Jacob').fill('110');
+  await scoreInput(page,'Matt').fill('95');
+  await scoreInput(page,'Weston').fill('130');
   await page.getByRole('button',{name:'Apply scores'}).click();
 
   const mattCharge=page.locator('.history-row').filter({hasText:'Week 2 · Matt · $10.00'}).getByRole('checkbox');
@@ -85,10 +86,10 @@ test('TEST MODE payment accounting reverses cleanly and historical score edits d
   await duncanCharge.check();
   await expect(page.locator('.hero .metric').first()).toContainText('$15.00');
 
-  await page.getByLabel('Duncan').fill('90');
-  await page.getByLabel('Jacob').fill('110');
-  await page.getByLabel('Matt').fill('125');
-  await page.getByLabel('Weston').fill('130');
+  await scoreInput(page,'Duncan').fill('90');
+  await scoreInput(page,'Jacob').fill('110');
+  await scoreInput(page,'Matt').fill('125');
+  await scoreInput(page,'Weston').fill('130');
   await page.getByRole('button',{name:'Apply scores'}).click();
 
   await expect(page.getByText(/Week 2 · Duncan · \$10\.00/)).toBeVisible();
@@ -116,7 +117,6 @@ test('public dashboard overlays current-week Sleeper scores without changing can
   await expect(page.getByText('168.1',{exact:true})).toBeVisible();
   await expect(page.getByText('146.22',{exact:true})).toBeVisible();
 
-  // Week 1 dues are unpaid, so live Week 2 presentation must not change the canonical $0 balance.
   await expect(page.locator('.summary-grid .metric').first()).toContainText('$0.00');
 });
 
