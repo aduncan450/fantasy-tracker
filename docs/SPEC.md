@@ -51,7 +51,7 @@ For Weeks 1–16, matchup context and editable score inputs share one **Matchups
 
 The admin can edit scores, mark each derived due paid/unpaid, create/update bets, save individual parlay leg outcomes, preview supported NFL bet results, apply detected statuses locally for commissioner review, track PrizePicks actual wagers, edit Sleeper roster mapping, sync Sleeper scores, export/import backups, and save all changes. Admin-only PrizePicks tracking participates in the same main save lifecycle.
 
-Admin in-memory mutations are tracked with explicit dirty state. After an Apply/import/sync/payment/direct-entry action changes tracker data without persisting it, the portal shows **UNSAVED CHANGES** plus a fixed mobile-friendly **Save now** control. Successful production or TEST MODE persistence clears the dirty state. Browser unloads and destructive admin actions warn before discarding dirty data. Draft text that still requires an existing **Apply** action is tracked separately and must not be falsely represented as saved tracker data.
+Admin in-memory mutations are tracked with explicit dirty state. After an Apply/import/sync/payment/direct-entry action changes tracker data without persisting it, the portal shows **UNSAVED CHANGES** plus a fixed mobile-friendly **Save now** control. Successful production or TEST MODE persistence clears the dirty state. Browser unloads and destructive admin actions warn before discarding dirty data. Draft text that still requires an existing **Apply** action is tracked separately and must not be falsely represented as saved tracker data. Week changes are intercepted before the core week-change handler so dismissing the draft-discard warning reliably preserves both the current week and the draft values.
 
 The admin also derives a **Weekly closeout** checklist from existing tracker state; no new closeout fields are stored. Started/current weeks are evaluated for score finality where applicable, regular-season dues payment completion, overall parlay settlement, individual parlay-leg completion, and $5 bet settlement. The week selector marks the derived workflow week with `← CURRENT`, unresolved started weeks with `•`, and cleared started weeks with `✓`. Future untouched weeks remain unmarked.
 
@@ -77,24 +77,24 @@ The dashboard order is:
 6. Recent completed matchups
 7. Pot activity
 
-The top summary is one cohesive panel. **Week** is left-most; **Pot** is the other primary value; **Collected** and **Unpaid** are smaller stacked secondary values. Use a plain calendar icon for Week and coin imagery for Pot.
+The top summary is one cohesive panel with only an outer container border. **Week** is left-most; **Pot** is the other primary value; **Collected** and **Unpaid** are smaller stacked secondary values. Internal divider borders are intentionally omitted so the four values read as one balanced summary. Use a plain calendar icon for Week and coin imagery for Pot.
 
-The header uses uppercase **BUFF HUSKY FANTASY TRACKER** preceded by the green vertical bar, followed by `2026–2027 SEASON | WEEK X`. The last commissioner update date/time sits directly below on one line and shares the same visual width. Header art is limited to subdued mountain imagery; the generated husky mascot was removed.
+The header uses uppercase **BUFF HUSKY FANTASY TRACKER** preceded by the green vertical bar, followed by `2026–2027 SEASON | WEEK X`. The last commissioner update date/time sits directly below on one line with evenly distributed fields. The header intentionally has no mascot, mountain illustration, or other decorative art.
 
-Current matchup lifecycle belongs in the matchup section: **UPCOMING** before live scores, **LIVE · SLEEPER** while the current-week overlay is active, and **FINAL** when saved scores are final. The current-week matchup list uses the same stacked matchup-card pattern as recent results rather than a separate desktop-only two-column treatment.
+Current matchup lifecycle belongs in the matchup section: **UPCOMING** before live scores, **LIVE · SLEEPER** while the current-week overlay is active, and **FINAL** when saved scores are final. The current-week matchup list uses the same stacked matchup-card pattern as recent results rather than a separate desktop-only two-column treatment. Internal implementation/explainer copy such as how Sleeper refreshes scores is not displayed publicly.
 
-Recent completed matchups are labeled **RECENT MATCHUPS**. Final winners may use a restrained green gradient and trophy icon. Preserve muted loser colors: the unique lowest scorer uses muted red and the other matchup loser uses muted orange. Compact dues chips show only `Name · Amount`; the rule explanation is omitted because the league already knows the rules.
+Recent completed matchups are labeled **RECENT MATCHUPS** and each result card spans the available section width. Final winners may use a restrained green gradient and trophy icon. Preserve muted loser colors: the unique lowest scorer uses muted red and the other matchup loser uses muted orange. Compact dues chips show only `Name · Amount`, omit the rule explanation, and are right-aligned beneath the result.
 
 For betting, commissioner-saved statuses always take precedence. Only parlay legs still saved as `pending` and $5 bets still saved as `placed` are eligible for a public automatic overlay. A supported final result may display as an `auto` result beside the unresolved saved status. Public automatic results never update Supabase, payouts, overall parlay status, player parlay statistics, ledger entries, pot balance, or season payout calculations.
 
-The betting section title is simply **BETS** in the established green heading treatment. The header itself has no dice icon and no week label. The $10 parlay uses a dice icon; the $5 bet uses a dart icon. Presentation-only betting lifecycle is: no badge before any bet exists, **PLACED** after entry, **LIVE** once outcomes begin resolving while at least one overall bet remains placed, and **FINAL** once commissioner-saved overall statuses are settled.
+The betting section title is simply **BETS** in the established green heading treatment. The header itself has no dice icon and no week label. The $10 parlay uses a dice icon; the $5 bet uses a dart hitting a bullseye icon. Presentation-only betting lifecycle is: no badge before any bet exists, **PLACED** after entry, **LIVE** once outcomes begin resolving while at least one overall bet remains placed, and **FINAL** once commissioner-saved overall statuses are settled.
 
 Season payout shows the three split rows directly under **SEASON PAYOUT**. Do not show a redundant `Current pot split` subheading. The only explanatory note is `Projected from the current pot.`
 
 ## 10. Presentation rules
 Names remain normal case. Most labels/headings use the established uppercase visual treatment. Mobile layouts must remain comfortable on an iPhone. Equal-information fields should have equal visible widths. Avoid arbitrary wrapping that makes paired values appear unrelated.
 
-The public dashboard uses dedicated `public.css`; admin styling must not be changed as a side effect of public visual iteration. Styling should stay dashboard-first rather than poster-like. Decorative slogans are not part of the product.
+The public dashboard uses dedicated `public.css`; admin styling must not be changed as a side effect of public visual iteration. Styling should stay dashboard-first rather than poster-like. Decorative slogans and decorative header imagery are not part of the product.
 
 TEST MODE must remain unmistakable with its yellow warning treatment, persistent banner, and explicit production-safety copy. Reset and Exit & discard controls must remain legible and mobile-friendly.
 
