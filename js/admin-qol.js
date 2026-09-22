@@ -135,9 +135,9 @@ app.addEventListener('change',e=>{
   if(e.target.matches?.('#week-picker')){
     const select=e.target,next=select.value,previous=draftWeekValue||lastWeekValue||next;
     if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
-      select.value=previous;
       e.preventDefault();
       e.stopImmediatePropagation();
+      queueMicrotask(()=>{select.value=previous;lastWeekValue=previous});
       return;
     }
     if(draftDirty)clearDraft();
