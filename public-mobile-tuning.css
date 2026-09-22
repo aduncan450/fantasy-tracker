@@ -1,0 +1,13 @@
+@media(max-width:560px){
+  .header-updated{display:grid;grid-template-columns:auto auto auto auto;justify-content:start;align-items:center;column-gap:8px;width:auto;margin-top:6px;font-size:.47rem;letter-spacing:.07em;opacity:.76}
+  .header-updated .updated-label,.header-updated .updated-date,.header-updated .updated-sep,.header-updated .updated-time{white-space:nowrap;text-align:left}
+  .summary-board{display:grid;grid-template-columns:minmax(92px,.72fr) minmax(145px,1.18fr) auto;align-items:center;column-gap:12px;padding:14px 15px}
+  .summary-board .metric-week,.summary-board .metric-pot{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;column-gap:9px}
+  .summary-board .metric-week .metric-icon,.summary-board .metric-pot .metric-icon{width:28px;height:28px}
+  .summary-board .metric-week span,.summary-board .metric-pot span{font-size:.51rem;letter-spacing:.085em}
+  .summary-board .metric-week strong,.summary-board .metric-pot strong{margin-top:3px;font-size:1.44rem;line-height:1}
+  .summary-board .metric-pot strong{font-size:1.52rem}
+  .summary-secondary{justify-self:end;gap:7px}
+  .summary-secondary .metric strong{font-size:.74rem}
+  .summary-secondary .metric span{font-size:.49rem}
+}
