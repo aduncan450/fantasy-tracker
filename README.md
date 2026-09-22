@@ -4,7 +4,7 @@
 
 ## Architecture
 
-- Public site: read-only league dashboard with live current-week Sleeper scores and read-only automatic supported NFL bet outcomes when available
+- Public site: read-only branded league dashboard with live current-week Sleeper scores, section-local lifecycle statuses, and read-only automatic supported NFL bet outcomes when available
 - `/admin`: commissioner-only data entry and maintenance, with derived weekly closeout/attention status and unsaved-change protection
 - Canonical production storage: Supabase (public read, authenticated admin write via RLS)
 - Admin TEST MODE: isolated disposable browser-local copy using the same league schema/business logic; never read by the public dashboard
@@ -20,12 +20,18 @@
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
 - `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, and supported NFL bet-result parsing/evaluation.
-- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public redesign/status rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
 
 The tests mock external writes and APIs; they do not modify the production Supabase league row. Manual TEST MODE QA remains useful for visual judgment and genuinely new workflows, but existing covered behavior should be protected by automated tests first.
+
+## Public dashboard presentation
+
+The public dashboard uses a dedicated `public.css` layer so visual iteration does not restyle the commissioner portal. The header is intentionally branded but restrained: **BUFF HUSKY FANTASY TRACKER** is uppercase with the green bar accent, followed by the current `SEASON | WEEK` context and subtle husky/mountain artwork. The top summary is a single cohesive unit with **Week** and **Pot** as primary information and **Collected/Unpaid** stacked as secondary values.
+
+Fantasy matchup lifecycle is shown beside the matchup data itself as **UPCOMING**, **LIVE · SLEEPER**, or **FINAL** rather than as a global page status. Finalized winners receive a restrained green gradient and trophy icon; the unique lowest scorer retains muted red treatment and the other matchup loser retains muted orange. The betting section uses dice/target iconography and a separate display lifecycle: no badge before a bet exists, then **PLACED**, **LIVE** once outcomes begin resolving, and **FINAL** after commissioner-saved bet statuses are settled. These display labels are derived UI only and do not change canonical bet statuses.
 
 ## Admin workflow safeguards
 
