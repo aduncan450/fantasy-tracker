@@ -9,10 +9,18 @@ async function mockProduction(page,data){
     return route.fulfill({status:200,contentType:'application/json',body:'[]'});
   });
 }
+async function freezeWeek2(page){
+  await page.addInitScript(()=>{
+    const RealDate=Date,fixed=new RealDate('2026-09-21T12:00:00-05:00');
+    class FixedDate extends RealDate{constructor(...args){super(...(args.length?args:[fixed.getTime()]))}static now(){return fixed.getTime()}}
+    Date=FixedDate;
+  });
+}
 
 test('public dashboard keeps the branded layout compact and status-localized',async({page})=>{
   const production=initialLeague();
   await mockProduction(page,production);
+  await freezeWeek2(page);
   await page.goto('/');
 
   await expect(page.locator('.brand-title')).toHaveText(/BUFF HUSKY FANTASY TRACKER/);
@@ -33,6 +41,7 @@ test('completed matchup styling keeps winner and loser cues distinct with compac
   const week1=production.weeks.find(w=>w.week===1);
   week1.scores={Duncan:120,Matt:110,Jacob:100,Weston:130};
   await mockProduction(page,production);
+  await freezeWeek2(page);
   await page.goto('/');
 
   const result=page.locator('.result-week').filter({hasText:'Week 1'});
