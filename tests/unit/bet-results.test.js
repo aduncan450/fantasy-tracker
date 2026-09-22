@@ -8,10 +8,12 @@ const snapshot={season:2026,week:2,events:[
   {id:'3',name:'Buffalo Bills at Detroit Lions',completed:true,statusName:'Final',teams:[{aliases:['Buffalo Bills','Bills','BUF'],score:31,winner:true},{aliases:['Detroit Lions','Lions','DET'],score:27,winner:false}],players:[{aliases:['David Montgomery'],stats:{rushingTouchdowns:0,receivingTouchdowns:0}},{aliases:['Jahmyr Gibbs'],stats:{rushingTouchdowns:1,receivingTouchdowns:0}}]}
 ]};
 
-test('parses current supported player props and team winner bet',()=>{
+test('parses supported player props and team bets',()=>{
   assert.deepEqual(parseBetPick('K. Walker III Over 78.5 Rushing Yards'),{supported:true,kind:'player-prop',raw:'K. Walker III Over 78.5 Rushing Yards',subject:'K. Walker III',direction:'over',line:78.5,stat:'rushingYards',statLabel:'rushing yards'});
   assert.equal(parseBetPick('D. Montgomery Over .5 Anytime TD').stat,'anytimeTouchdowns');
   assert.deepEqual(parseBetPick('Bills to Win vs Lions'),{supported:true,kind:'team-win',raw:'Bills to Win vs Lions',team:'Bills',opponent:'Lions'});
+  assert.deepEqual(parseBetPick('BUF -3.5 spread'),{supported:true,kind:'team-spread',raw:'BUF -3.5 spread',team:'BUF',line:-3.5});
+  assert.deepEqual(parseBetPick('BUF vs DET over 54.5 total'),{supported:true,kind:'team-total',raw:'BUF vs DET over 54.5 total',team:'BUF',opponent:'DET',direction:'over',line:54.5});
 });
 
 test('matches abbreviated names including suffixes',()=>{
@@ -26,6 +28,10 @@ test('evaluates current Week 2 examples from final box scores',()=>{
   assert.equal(evaluateBetPick(parseBetPick('D. Montgomery Over .5 Anytime TD'),snapshot).status,'miss');
   assert.equal(evaluateBetPick(parseBetPick('J. Gibbs Over .5 Anytime TD'),snapshot).status,'hit');
   assert.equal(evaluateBetPick(parseBetPick('Bills to Win vs Lions'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('BUF -3.5 spread'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('DET +3.5 spread'),snapshot).status,'lost');
+  assert.equal(evaluateBetPick(parseBetPick('BUF vs DET over 54.5 total'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('BUF vs DET under 58 total'),snapshot).status,'push');
 });
 
 test('does not settle a supported pick before its game is final',()=>{
