@@ -4,14 +4,14 @@
 
 ## Architecture
 
-- Public site: read-only branded league dashboard with live current-week Sleeper scores, section-local lifecycle statuses, and read-only automatic supported NFL bet outcomes when available
+- Public site: read-only branded league dashboard with calendar-based week display, live current-week Sleeper scores, section-local lifecycle statuses, and read-only automatic supported NFL bet outcomes when available
 - `/admin`: commissioner-only data entry and maintenance, with derived weekly closeout/attention status and unsaved-change protection
 - Canonical production storage: Supabase (public read, authenticated admin write via RLS)
 - Admin TEST MODE: isolated disposable browser-local copy using the same league schema/business logic; never read by the public dashboard
 - GitHub Pages: static hosting
 - JSON export/import: independent backup and recovery
 - Money: integer cents only
-- Derived state: dues, pot balance, player summaries, week status, and admin closeout/attention markers are calculated from canonical inputs
+- Derived state: dues, pot balance, player summaries, admin workflow week, and closeout/attention markers are calculated from canonical inputs
 - Sleeper: configured league metadata, roster mapping, live public scores, and commissioner final-score sync
 - NFL bet results: ESPN scoreboard/box-score reads can display supported unresolved outcomes publicly and propose the same outcomes in admin; only commissioner save makes them canonical
 
@@ -19,19 +19,26 @@
 
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
-- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, and supported NFL bet-result parsing/evaluation.
-- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public redesign/status rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
+- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, supported NFL bet-result parsing/evaluation, and Thursday-based public dashboard week rollover.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
+- Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Thursday rollover boundary.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
 
 The tests mock external writes and APIs; they do not modify the production Supabase league row. Manual TEST MODE QA remains useful for visual judgment and genuinely new workflows, but existing covered behavior should be protected by automated tests first.
 
-## Public dashboard presentation
+## Public dashboard presentation and week timing
 
-The public dashboard uses a dedicated `public.css` layer so visual iteration does not restyle the commissioner portal. The header is intentionally branded but restrained: **BUFF HUSKY FANTASY TRACKER** is uppercase with the green bar accent, followed by the current `SEASON | WEEK` context and subtle husky/mountain artwork. The top summary is a single cohesive unit with **Week** and **Pot** as primary information and **Collected/Unpaid** stacked as secondary values.
+The public dashboard uses a dedicated `public.css` layer so visual iteration does not restyle the commissioner portal. The header is branded but restrained: **BUFF HUSKY FANTASY TRACKER** is uppercase with the green bar accent, followed by `2026–2027 SEASON | WEEK X`, the last commissioner update on one line, and subdued mountain artwork. The generated husky mascot was removed.
 
-Fantasy matchup lifecycle is shown beside the matchup data itself as **UPCOMING**, **LIVE · SLEEPER**, or **FINAL** rather than as a global page status. Finalized winners receive a restrained green gradient and trophy icon; the unique lowest scorer retains muted red treatment and the other matchup loser retains muted orange. The betting section uses dice/target iconography and a separate display lifecycle: no badge before a bet exists, then **PLACED**, **LIVE** once outcomes begin resolving, and **FINAL** after commissioner-saved bet statuses are settled. These display labels are derived UI only and do not change canonical bet statuses.
+The top summary is one cohesive panel with **Week** left-most, **Pot** as the other primary value, and **Collected/Unpaid** stacked as secondary values. Matchup cards use a consistent stacked layout on desktop and mobile. Finalized winners receive a restrained green gradient and trophy icon; the unique lowest scorer keeps muted red treatment and the other matchup loser keeps muted orange. Recent dues chips show only player name and amount.
+
+The public dashboard week is intentionally different from the admin workflow week. For the 2026 season, Week 1 begins Thursday, September 10. The public page advances every Thursday at **12:00 AM America/Chicago**, so finalizing a matchup on Monday does not make the public dashboard jump ahead early. Admin remains completion-driven for commissioner workflow/closeout purposes.
+
+Fantasy matchup lifecycle is shown beside the matchup data itself as **UPCOMING**, **LIVE · SLEEPER**, or **FINAL** rather than as a global page status. The betting section uses no header icon or week label; the $10 parlay uses dice and the $5 bet uses a dart. Betting display lifecycle is no badge before entry, then **PLACED**, **LIVE** once outcomes begin resolving, and **FINAL** after commissioner-saved bet statuses are settled. These display labels are derived UI only and do not change canonical bet statuses.
+
+The public dashboard section order is: pot/week summary, player cards, current matchups, current bets, season payout, recent matchups, then pot activity.
 
 ## Admin workflow safeguards
 
@@ -43,13 +50,13 @@ The portal also includes a derived **Weekly closeout** card. It checks started/c
 
 The Sleeper league ID is configured in the app, so there is no persistent "connect" step. The admin automatically loads league/roster metadata. Roster mapping is setup/correction data and can be edited when needed.
 
-For the current NFL/fantasy week, the public dashboard requests matchups and scores directly from Sleeper on page load and labels them **LIVE · SLEEPER**. Those live values are display-only: they do not write Supabase, generate dues, or change pot/accounting. If Sleeper is unavailable, the public page falls back to saved tracker data.
+For the public calendar week, the dashboard requests that week's matchups and scores directly from Sleeper on page load when Sleeper reports the same NFL week, and labels them **LIVE · SLEEPER**. Those live values are display-only: they do not write Supabase, generate dues, or change pot/accounting. If Sleeper is unavailable, the public page falls back to saved tracker data.
 
 The commissioner can still sync a week's Sleeper scores into tracker data. Synced scores remain non-final for dues until Sleeper advances beyond that NFL week. Supabase remains canonical for finalized historical scores and all accounting. Sleeper projections are intentionally not tracked; they duplicated information already available in Sleeper without serving a tracker-specific workflow.
 
 ## Automatic bet-result behavior
 
-Supported unresolved NFL bets can be evaluated from ESPN scoreboard and box-score data. The public dashboard now uses the same detection logic as admin for display only.
+Supported unresolved NFL bets can be evaluated from ESPN scoreboard and box-score data. The public dashboard uses the same detection logic as admin for display only.
 
 On the public page, a parlay leg still saved as **pending** may display a detected `hit · auto`, `miss · auto`, or `push · auto`. A $5 wager still saved as **placed** may display an automatic won/lost/push result beside that saved status. The page clearly notes that automatic results are read-only until the commissioner saves the official status in Admin. These overlays never change Supabase, payouts, overall parlay status, player parlay statistics, the ledger, or pot accounting. Commissioner-saved statuses always take precedence, and already settled saved bets do not trigger an ESPN check.
 
