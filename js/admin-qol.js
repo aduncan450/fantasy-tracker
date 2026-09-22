@@ -1,7 +1,7 @@
 import {currentWeek,duesRows,weekResult} from './calculations.js?v=20260920-live-sleeper';
 
 const app=document.querySelector('#app');
-let dirty=false,draftDirty=false,lastWeekValue=null,renderQueued=false;
+let dirty=false,draftDirty=false,lastWeekValue=null,renderQueued=false,suppressWeekChange=false;
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const settled=b=>Boolean(b)&&['won','lost','push','void'].includes(b.status);
@@ -121,6 +121,23 @@ function reconcileAfterRender(){
 }
 
 app.addEventListener('input',e=>{
+  if(e.target.matches?.('#week-picker')){
+    if(suppressWeekChange){e.preventDefault();e.stopImmediatePropagation();return}
+    if(draftDirty){
+      const previous=lastWeekValue||e.target.value;
+      if(!confirm('Discard unapplied form edits and change weeks?')){
+        e.target.value=previous;
+        suppressWeekChange=true;
+        queueMicrotask(()=>{suppressWeekChange=false});
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+      }
+      clearDraft();
+    }
+    lastWeekValue=e.target.value;
+    return;
+  }
   if(e.target.matches?.('#weekly-bet-adjustments .actual-bet'))markDirty();
   else if(e.target.closest?.('#scores,#bets,#sleeper-map'))markDraft();
 },true);
@@ -130,7 +147,8 @@ app.addEventListener('submit',e=>{
 app.addEventListener('change',e=>{
   if(e.target.matches?.('.due-paid'))markDirty();
   if(e.target.matches?.('#week-picker')){
-    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){e.target.value=lastWeekValue||e.target.value;e.stopImmediatePropagation();return}
+    if(suppressWeekChange){e.target.value=lastWeekValue||e.target.value;e.preventDefault();e.stopImmediatePropagation();return}
+    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){e.target.value=lastWeekValue||e.target.value;e.preventDefault();e.stopImmediatePropagation();return}
     clearDraft();lastWeekValue=e.target.value;
   }
 },true);
