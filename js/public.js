@@ -1,7 +1,7 @@
 import {loadLeague} from './storage.js?v=20260921-public-bet-results';
 import {money,pot,weekResult,ledger,playerStats,duesSummary} from './calculations.js?v=20260921-public-bet-results';
 import {liveSleeperWeek,sleeperState} from './sleeper.js?v=20260921-public-bet-results';
-import {detectBetResults} from './bet-results.js?v=20260921-public-bet-results';
+import {detectBetResults} from './bet-results.js?v=20260922-structured-bets';
 import {dashboardWeek} from './dashboard-week.js?v=20260921-public-redesign4';
 
 const app=document.querySelector('#app'),sync=document.querySelector('#sync'),seasonContext=document.querySelector('#season-context');
