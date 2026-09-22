@@ -69,7 +69,16 @@ function proxyWeekPicker(select){
   proxy.addEventListener('change',()=>{
     const next=proxy.value,previous=draftWeekValue||lastWeekValue||original.value;
     if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
+      const restore=()=>{
+        const current=document.querySelector('#week-picker');
+        if(current?.dataset.qolProxy==='true')current.value=previous;
+        lastWeekValue=previous;
+      };
       proxy.value=previous;
+      queueMicrotask(restore);
+      requestAnimationFrame(restore);
+      setTimeout(restore,0);
+      setTimeout(restore,50);
       return;
     }
     if(draftDirty)clearDraft();
