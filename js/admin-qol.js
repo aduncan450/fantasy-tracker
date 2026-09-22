@@ -2,6 +2,7 @@ import {currentWeek,duesRows,weekResult} from './calculations.js?v=20260920-live
 
 const app=document.querySelector('#app');
 let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null,renderQueued=false;
+const handledMessages=new WeakSet();
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const settled=b=>Boolean(b)&&['won','lost','push','void'].includes(b.status);
@@ -110,13 +111,16 @@ function renderEnhancements(){
   ensureDock();
   syncDirtyUi();
 }
-function messageText(){return [...app.querySelectorAll('.card.success,.card.error')].map(x=>x.textContent.trim()).join(' | ')}
 function reconcileAfterRender(){
-  const text=messageText();
-  if(/Saved to Supabase\.|Saved to isolated TEST MODE storage\.|Parlay leg results saved/.test(text)){clearDirty();clearDraft()}
-  if(/TEST MODE started|TEST MODE reset|Exited TEST MODE|Signed out/.test(text)){clearDirty();clearDraft()}
-  if(/Backup loaded locally/.test(text))markDirty();
-  if(/Sleeper Week \d+ (live|final) scores imported locally/.test(text))markDirty();
+  for(const card of app.querySelectorAll('.card.success,.card.error')){
+    if(handledMessages.has(card))continue;
+    handledMessages.add(card);
+    const text=card.textContent.trim();
+    if(/Saved to Supabase\.|Saved to isolated TEST MODE storage\.|Parlay leg results saved/.test(text)){clearDirty();clearDraft()}
+    if(/TEST MODE started|TEST MODE reset|Exited TEST MODE|Signed out/.test(text)){clearDirty();clearDraft()}
+    if(/Backup loaded locally/.test(text))markDirty();
+    if(/Sleeper Week \d+ (live|final) scores imported locally/.test(text))markDirty();
+  }
   renderEnhancements();
 }
 
