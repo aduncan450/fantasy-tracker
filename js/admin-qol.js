@@ -22,6 +22,21 @@ function clearDirty(){dirty=false;syncDirtyUi()}
 function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
 function clearDraft(){draftDirty=false;draftWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
+function captureDraftSnapshot(){
+  return [...app.querySelectorAll('#scores [name],#bets [name],#sleeper-map [name]')].map(el=>({name:el.name,value:el.value,checked:'checked'in el?el.checked:null}));
+}
+function restoreDraftSnapshot(snapshot,weekValue){
+  for(const saved of snapshot){
+    const el=[...app.querySelectorAll('[name]')].find(x=>x.name===saved.name);
+    if(!el)continue;
+    el.value=saved.value;
+    if(saved.checked!==null)el.checked=saved.checked;
+  }
+  draftDirty=true;
+  draftWeekValue=weekValue;
+  lastWeekValue=weekValue;
+  syncDirtyUi();
+}
 
 window.addEventListener('beforeunload',e=>{if(!dirty&&!draftDirty)return;e.preventDefault();e.returnValue=''});
 
@@ -69,16 +84,14 @@ function proxyWeekPicker(select){
   proxy.addEventListener('change',()=>{
     const next=proxy.value,previous=draftWeekValue||lastWeekValue||original.value;
     if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
-      const restore=()=>{
-        const current=document.querySelector('#week-picker');
-        if(current?.dataset.qolProxy==='true')current.value=previous;
-        lastWeekValue=previous;
-      };
+      const snapshot=captureDraftSnapshot();
       proxy.value=previous;
-      queueMicrotask(restore);
-      requestAnimationFrame(restore);
-      setTimeout(restore,0);
-      setTimeout(restore,50);
+      setTimeout(()=>{
+        original.value=previous;
+        original.dispatchEvent(new Event('change',{bubbles:true}));
+        restoreDraftSnapshot(snapshot,previous);
+        queueMicrotask(()=>restoreDraftSnapshot(snapshot,previous));
+      },0);
       return;
     }
     if(draftDirty)clearDraft();
