@@ -12,6 +12,13 @@ async function mockProduction(page,data){
     return route.fulfill({status:200,contentType:'application/json',body:'[]'});
   });
 }
+async function freezeWeek2(page){
+  await page.addInitScript(()=>{
+    const RealDate=Date,fixed=new RealDate('2026-09-21T12:00:00-05:00');
+    class FixedDate extends RealDate{constructor(...args){super(...(args.length?args:[fixed.getTime()]))}static now(){return fixed.getTime()}}
+    Date=FixedDate;
+  });
+}
 function event(id,name,teams){return {id,name,competitions:[{status:{type:{completed:true,description:'Final'}},competitors:teams.map(([displayName,name,abbreviation,score,winner])=>({score:String(score),winner,team:{displayName,name,abbreviation}}))}]}}
 function playerSummary(players){return {boxscore:{players:[{statistics:[{name:'rushing',keys:['rushingAttempts','rushingYards','yardsPerRushAttempt','rushingTouchdowns'],labels:['CAR','YDS','AVG','TD'],athletes:players.map(([id,displayName,yards,td])=>({athlete:{id,displayName},stats:['10',String(yards),'0',String(td)]}))}]}]}}}
 async function mockEspn(page){
@@ -43,6 +50,7 @@ test('public dashboard shows detected outcomes read-only without changing pot ac
   ];
   await mockProduction(page,production);
   await mockEspn(page);
+  await freezeWeek2(page);
 
   await page.goto('/');
   await expect(page.getByText('hit · auto',{exact:true})).toHaveCount(2);
@@ -66,6 +74,7 @@ test('public dashboard prefers commissioner-saved statuses over automatic propos
     {stakeCents:500,status:'lost',payoutCents:0,description:'Bills to Win vs Lions'}
   ];
   await mockProduction(page,production);
+  await freezeWeek2(page);
   let espnRequests=0;
   await page.route(`${ESPN_API}/**`,route=>{espnRequests++;return route.abort();});
 
