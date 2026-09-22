@@ -1,7 +1,7 @@
 import {currentWeek,duesRows,weekResult} from './calculations.js?v=20260920-live-sleeper';
 
 const app=document.querySelector('#app');
-let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null,renderQueued=false,blockedWeekValue=null;
+let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null,renderQueued=false;
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const settled=b=>Boolean(b)&&['won','lost','push','void'].includes(b.status);
@@ -20,16 +20,8 @@ function syncDirtyUi(){
 function markDirty(){dirty=true;syncDirtyUi()}
 function clearDirty(){dirty=false;syncDirtyUi()}
 function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
-function clearDraft(){draftDirty=false;draftWeekValue=null;blockedWeekValue=null;syncDirtyUi()}
+function clearDraft(){draftDirty=false;draftWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
-function restoreBlockedWeek(value){
-  setTimeout(()=>{
-    const select=document.querySelector('#week-picker');
-    if(select)select.value=value;
-    lastWeekValue=value;
-    blockedWeekValue=null;
-  },0);
-}
 
 window.addEventListener('beforeunload',e=>{if(!dirty&&!draftDirty)return;e.preventDefault();e.returnValue=''});
 
@@ -69,9 +61,30 @@ function summaries(data){
   const workflowWeek=currentWeek(data),dues=duesRows(data);
   return {workflowWeek,rows:data.weeks.map(w=>closeout(data,w,workflowWeek,dues))};
 }
+function guardWeekPicker(select){
+  if(select.dataset.draftGuard==='true')return;
+  select.dataset.draftGuard='true';
+  select.addEventListener('change',e=>{
+    if(!draftDirty){lastWeekValue=select.value;return}
+    const previous=draftWeekValue||lastWeekValue||select.value;
+    if(confirm('Discard unapplied form edits and change weeks?')){
+      clearDraft();
+      lastWeekValue=select.value;
+      return;
+    }
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    setTimeout(()=>{
+      const current=document.querySelector('#week-picker');
+      if(current)current.value=previous;
+      lastWeekValue=previous;
+    },0);
+  },true);
+}
 function decorateWeekPicker(data){
   const select=document.querySelector('#week-picker');
   if(!select)return;
+  guardWeekPicker(select);
   const {workflowWeek,rows}=summaries(data),byWeek=new Map(rows.map(x=>[x.week,x]));
   for(const option of select.options){
     const week=Number(option.value),w=data.weeks.find(x=>x.week===week),row=byWeek.get(week);
@@ -129,22 +142,6 @@ function reconcileAfterRender(){
 }
 
 app.addEventListener('input',e=>{
-  if(e.target.matches?.('#week-picker')){
-    if(blockedWeekValue!==null){e.target.value=blockedWeekValue;e.preventDefault();e.stopImmediatePropagation();return}
-    if(draftDirty){
-      const previous=draftWeekValue||lastWeekValue||e.target.value;
-      if(!confirm('Discard unapplied form edits and change weeks?')){
-        blockedWeekValue=previous;
-        e.target.value=previous;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        return;
-      }
-      clearDraft();
-    }
-    lastWeekValue=e.target.value;
-    return;
-  }
   if(e.target.matches?.('#weekly-bet-adjustments .actual-bet'))markDirty();
   else if(e.target.closest?.('#scores,#bets,#sleeper-map'))markDraft();
 },true);
@@ -153,25 +150,6 @@ app.addEventListener('submit',e=>{
 },true);
 app.addEventListener('change',e=>{
   if(e.target.matches?.('.due-paid'))markDirty();
-  if(e.target.matches?.('#week-picker')){
-    if(blockedWeekValue!==null){
-      const previous=blockedWeekValue;
-      e.target.value=previous;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      restoreBlockedWeek(previous);
-      return;
-    }
-    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
-      const previous=draftWeekValue||lastWeekValue||e.target.value;
-      e.target.value=previous;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      restoreBlockedWeek(previous);
-      return;
-    }
-    clearDraft();lastWeekValue=e.target.value;
-  }
 },true);
 app.addEventListener('click',e=>{
   const target=e.target.closest?.('button,a');
