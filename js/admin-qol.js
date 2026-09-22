@@ -128,7 +128,7 @@ app.addEventListener('input',e=>{
       if(!confirm('Discard unapplied form edits and change weeks?')){
         e.target.value=previous;
         suppressWeekChange=true;
-        queueMicrotask(()=>{suppressWeekChange=false});
+        setTimeout(()=>{suppressWeekChange=false},0);
         e.preventDefault();
         e.stopImmediatePropagation();
         return;
