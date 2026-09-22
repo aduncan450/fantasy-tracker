@@ -61,30 +61,9 @@ function summaries(data){
   const workflowWeek=currentWeek(data),dues=duesRows(data);
   return {workflowWeek,rows:data.weeks.map(w=>closeout(data,w,workflowWeek,dues))};
 }
-function guardWeekPicker(select){
-  if(select.dataset.draftGuard==='true')return;
-  select.dataset.draftGuard='true';
-  select.addEventListener('change',e=>{
-    if(!draftDirty){lastWeekValue=select.value;return}
-    const previous=draftWeekValue||lastWeekValue||select.value;
-    if(confirm('Discard unapplied form edits and change weeks?')){
-      clearDraft();
-      lastWeekValue=select.value;
-      return;
-    }
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    setTimeout(()=>{
-      const current=document.querySelector('#week-picker');
-      if(current)current.value=previous;
-      lastWeekValue=previous;
-    },0);
-  },true);
-}
 function decorateWeekPicker(data){
   const select=document.querySelector('#week-picker');
   if(!select)return;
-  guardWeekPicker(select);
   const {workflowWeek,rows}=summaries(data),byWeek=new Map(rows.map(x=>[x.week,x]));
   for(const option of select.options){
     const week=Number(option.value),w=data.weeks.find(x=>x.week===week),row=byWeek.get(week);
@@ -149,7 +128,23 @@ app.addEventListener('submit',e=>{
   if(e.target.matches?.('#scores,#bets,#sleeper-map')){clearDraft();markDirty()}
 },true);
 app.addEventListener('change',e=>{
-  if(e.target.matches?.('.due-paid'))markDirty();
+  if(e.target.matches?.('.due-paid')){markDirty();return}
+  if(!e.target.matches?.('#week-picker'))return;
+  if(!draftDirty){lastWeekValue=e.target.value;return}
+  const previous=draftWeekValue||lastWeekValue||e.target.value;
+  if(confirm('Discard unapplied form edits and change weeks?')){
+    clearDraft();
+    lastWeekValue=e.target.value;
+    return;
+  }
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  e.target.value=previous;
+  setTimeout(()=>{
+    const select=document.querySelector('#week-picker');
+    if(select)select.value=previous;
+    lastWeekValue=previous;
+  },0);
 },true);
 app.addEventListener('click',e=>{
   const target=e.target.closest?.('button,a');
