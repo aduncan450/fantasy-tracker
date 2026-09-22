@@ -22,8 +22,7 @@ function clearDirty(){dirty=false;syncDirtyUi()}
 function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
 function clearDraft(){draftDirty=false;draftWeekValue=null;blockedWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
-function restoreWeekSoon(value){
-  blockedWeekValue=value;
+function restoreBlockedWeek(value){
   setTimeout(()=>{
     const select=document.querySelector('#week-picker');
     if(select)select.value=value;
@@ -135,8 +134,8 @@ app.addEventListener('input',e=>{
     if(draftDirty){
       const previous=draftWeekValue||lastWeekValue||e.target.value;
       if(!confirm('Discard unapplied form edits and change weeks?')){
+        blockedWeekValue=previous;
         e.target.value=previous;
-        restoreWeekSoon(previous);
         e.preventDefault();
         e.stopImmediatePropagation();
         return;
@@ -158,17 +157,17 @@ app.addEventListener('change',e=>{
     if(blockedWeekValue!==null){
       const previous=blockedWeekValue;
       e.target.value=previous;
-      restoreWeekSoon(previous);
       e.preventDefault();
       e.stopImmediatePropagation();
+      restoreBlockedWeek(previous);
       return;
     }
     if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
       const previous=draftWeekValue||lastWeekValue||e.target.value;
       e.target.value=previous;
-      restoreWeekSoon(previous);
       e.preventDefault();
       e.stopImmediatePropagation();
+      restoreBlockedWeek(previous);
       return;
     }
     clearDraft();lastWeekValue=e.target.value;
