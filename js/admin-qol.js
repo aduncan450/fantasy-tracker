@@ -22,21 +22,6 @@ function clearDirty(){dirty=false;syncDirtyUi()}
 function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
 function clearDraft(){draftDirty=false;draftWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
-function captureDraftSnapshot(){
-  return [...app.querySelectorAll('#scores [name],#bets [name],#sleeper-map [name]')].map(el=>({name:el.name,value:el.value,checked:'checked'in el?el.checked:null}));
-}
-function restoreDraftSnapshot(snapshot,weekValue){
-  for(const saved of snapshot){
-    const el=[...app.querySelectorAll('[name]')].find(x=>x.name===saved.name);
-    if(!el)continue;
-    el.value=saved.value;
-    if(saved.checked!==null)el.checked=saved.checked;
-  }
-  draftDirty=true;
-  draftWeekValue=weekValue;
-  lastWeekValue=weekValue;
-  syncDirtyUi();
-}
 
 window.addEventListener('beforeunload',e=>{if(!dirty&&!draftDirty)return;e.preventDefault();e.returnValue=''});
 
@@ -76,35 +61,9 @@ function summaries(data){
   const workflowWeek=currentWeek(data),dues=duesRows(data);
   return {workflowWeek,rows:data.weeks.map(w=>closeout(data,w,workflowWeek,dues))};
 }
-function proxyWeekPicker(select){
-  if(select.dataset.qolProxy==='true')return select;
-  const original=select,proxy=original.cloneNode(true);
-  proxy.dataset.qolProxy='true';
-  original.replaceWith(proxy);
-  proxy.addEventListener('change',()=>{
-    const next=proxy.value,previous=draftWeekValue||lastWeekValue||original.value;
-    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
-      const snapshot=captureDraftSnapshot();
-      proxy.value=previous;
-      setTimeout(()=>{
-        original.value=previous;
-        original.dispatchEvent(new Event('change',{bubbles:true}));
-        restoreDraftSnapshot(snapshot,previous);
-        queueMicrotask(()=>restoreDraftSnapshot(snapshot,previous));
-      },0);
-      return;
-    }
-    if(draftDirty)clearDraft();
-    lastWeekValue=next;
-    original.value=next;
-    original.dispatchEvent(new Event('change',{bubbles:true}));
-  });
-  return proxy;
-}
 function decorateWeekPicker(data){
-  let select=document.querySelector('#week-picker');
+  const select=document.querySelector('#week-picker');
   if(!select)return;
-  select=proxyWeekPicker(select);
   const {workflowWeek,rows}=summaries(data),byWeek=new Map(rows.map(x=>[x.week,x]));
   for(const option of select.options){
     const week=Number(option.value),w=data.weeks.find(x=>x.week===week),row=byWeek.get(week);
@@ -169,6 +128,18 @@ app.addEventListener('submit',e=>{
   if(e.target.matches?.('#scores,#bets,#sleeper-map')){clearDraft();markDirty()}
 },true);
 app.addEventListener('change',e=>{
+  if(e.target.matches?.('#week-picker')){
+    const select=e.target,next=select.value,previous=draftWeekValue||lastWeekValue||next;
+    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
+      select.value=previous;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if(draftDirty)clearDraft();
+    lastWeekValue=next;
+    return;
+  }
   if(e.target.matches?.('.due-paid'))markDirty();
 },true);
 app.addEventListener('click',e=>{
