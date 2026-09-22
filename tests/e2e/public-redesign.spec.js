@@ -29,14 +29,14 @@ test('public dashboard keeps the branded layout compact and status-localized',as
   await expect(page.locator('[data-summary="pot"]')).toContainText('Pot');
   await expect(page.locator('.matchup-feature .section-status')).toHaveText('UPCOMING');
   await expect(page.locator('.bets-card .section-status')).toHaveCount(0);
-  await expect(page.locator('.brand-art svg')).toBeVisible();
-  await expect(page.locator('.brand-art svg circle')).toHaveCount(0);
+  await expect(page.locator('.brand-art')).toHaveCount(0);
+  await expect(page.getByText(/scores refresh from sleeper/i)).toHaveCount(0);
 
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
-test('completed matchup styling keeps winner and loser cues distinct with compact dues',async({page})=>{
+test('completed matchup styling keeps winner and loser cues distinct with compact right-aligned dues',async({page})=>{
   const production=initialLeague();
   const week1=production.weeks.find(w=>w.week===1);
   week1.scores={Duncan:120,Matt:110,Jacob:100,Weston:130};
@@ -53,4 +53,6 @@ test('completed matchup styling keeps winner and loser cues distinct with compac
   await expect(result.locator('.compact-dues .pill')).toHaveCount(2);
   await expect(result).not.toContainText('lowest score this week');
   await expect(result).not.toContainText('lost the other matchup');
+  const alignment=await result.locator('.compact-dues').evaluate(el=>getComputedStyle(el).justifyContent);
+  expect(alignment).toBe('flex-end');
 });
