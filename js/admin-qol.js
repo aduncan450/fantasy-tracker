@@ -1,7 +1,7 @@
 import {currentWeek,duesRows,weekResult} from './calculations.js?v=20260920-live-sleeper';
 
 const app=document.querySelector('#app');
-let dirty=false,draftDirty=false,lastWeekValue=null,renderQueued=false,blockedWeekValue=null;
+let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null,renderQueued=false,blockedWeekValue=null;
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const settled=b=>Boolean(b)&&['won','lost','push','void'].includes(b.status);
@@ -19,8 +19,8 @@ function syncDirtyUi(){
 }
 function markDirty(){dirty=true;syncDirtyUi()}
 function clearDirty(){dirty=false;syncDirtyUi()}
-function markDraft(){draftDirty=true;syncDirtyUi()}
-function clearDraft(){draftDirty=false;blockedWeekValue=null;syncDirtyUi()}
+function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
+function clearDraft(){draftDirty=false;draftWeekValue=null;blockedWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
 
 window.addEventListener('beforeunload',e=>{if(!dirty&&!draftDirty)return;e.preventDefault();e.returnValue=''});
@@ -124,7 +124,7 @@ app.addEventListener('input',e=>{
   if(e.target.matches?.('#week-picker')){
     if(blockedWeekValue!==null){e.target.value=blockedWeekValue;e.preventDefault();e.stopImmediatePropagation();return}
     if(draftDirty){
-      const previous=lastWeekValue||e.target.value;
+      const previous=draftWeekValue||lastWeekValue||e.target.value;
       if(!confirm('Discard unapplied form edits and change weeks?')){
         blockedWeekValue=previous;
         e.target.value=previous;
@@ -155,7 +155,7 @@ app.addEventListener('change',e=>{
       e.stopImmediatePropagation();
       return;
     }
-    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){e.target.value=lastWeekValue||e.target.value;e.preventDefault();e.stopImmediatePropagation();return}
+    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){const previous=draftWeekValue||lastWeekValue||e.target.value;e.target.value=previous;lastWeekValue=previous;e.preventDefault();e.stopImmediatePropagation();return}
     clearDraft();lastWeekValue=e.target.value;
   }
 },true);
