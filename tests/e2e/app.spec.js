@@ -56,8 +56,6 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await expect(page.getByText(/Saved to isolated TEST MODE storage/)).toBeVisible();
 
   await page.reload();
-  // A completed Week 1 correctly advances the workflow to Week 2 after reload.
-  // Navigate back to Week 1 to assert the saved historical data persisted.
   await expect(page.getByLabel('Week to edit')).toHaveValue('2');
   await page.getByLabel('Week to edit').selectOption('1');
   await expect(scoreInput(page,'Duncan')).toHaveValue('120');
@@ -65,7 +63,7 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await expect(page.getByText(/Week 1 · Jacob · \$10\.00/)).toBeVisible();
 
   await page.goto('/');
-  await expect(page.getByText('No completed weeks yet.')).toBeVisible();
+  await expect(page.getByText('No completed prior weeks yet.')).toBeVisible();
   await expect(page.getByText('$15.00')).toHaveCount(0);
 });
 
@@ -120,8 +118,7 @@ test('public dashboard overlays current-week Sleeper scores without changing can
   await expect(page.getByText('159.14',{exact:true})).toBeVisible();
   await expect(page.getByText('168.1',{exact:true})).toBeVisible();
   await expect(page.getByText('146.22',{exact:true})).toBeVisible();
-
-  await expect(page.locator('.summary-grid .metric').first()).toContainText('$0.00');
+  await expect(page.locator('[data-summary="pot"]')).toContainText('$0.00');
 });
 
 test('public dashboard falls back to saved tracker data when Sleeper is unavailable',async({page})=>{
@@ -133,7 +130,7 @@ test('public dashboard falls back to saved tracker data when Sleeper is unavaila
   await page.route(`${SLEEPER}/state/nfl`,route=>route.abort());
 
   await page.goto('/');
-  await expect(page.getByText('Upcoming matchups')).toBeVisible();
+  await expect(page.locator('.matchup-feature .section-status')).toHaveText('UPCOMING');
   await expect(page.getByText('LIVE',{exact:true})).toHaveCount(0);
-  await expect(page.getByText('No completed weeks yet.')).toHaveCount(0);
+  await expect(page.getByText('No completed prior weeks yet.')).toHaveCount(0);
 });
