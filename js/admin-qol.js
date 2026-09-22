@@ -47,15 +47,17 @@ function closeout(data,w,workflowWeek,dues){
       checks.push({ok:unpaid.length===0,label:unpaid.length?`${unpaid.length} dues payment${unpaid.length===1?'':'s'} unpaid`:'Dues paid'});
     }
   }
-  const parlay=(w.bets||[]).find(b=>b.stakeCents===1000);
-  if(!parlay)checks.push({ok:false,label:'$10 parlay not entered'});
-  else{
-    checks.push({ok:settled(parlay),label:settled(parlay)?'Parlay overall status settled':'Parlay overall status unsettled'});
-    const legs=legacyLegs(data,parlay),pending=data.players.filter(player=>!legs.find(l=>l.player===player)||legs.find(l=>l.player===player)?.status==='pending').length;
-    checks.push({ok:pending===0,label:pending?`${pending} parlay leg outcome${pending===1?'':'s'} pending`:'Parlay leg outcomes settled'});
+  if(w.week>1){
+    const parlay=(w.bets||[]).find(b=>b.stakeCents===1000);
+    if(!parlay)checks.push({ok:false,label:'$10 parlay not entered'});
+    else{
+      checks.push({ok:settled(parlay),label:settled(parlay)?'Parlay overall status settled':'Parlay overall status unsettled'});
+      const legs=legacyLegs(data,parlay),pending=data.players.filter(player=>!legs.find(l=>l.player===player)||legs.find(l=>l.player===player)?.status==='pending').length;
+      checks.push({ok:pending===0,label:pending?`${pending} parlay leg outcome${pending===1?'':'s'} pending`:'Parlay leg outcomes settled'});
+    }
+    const single=(w.bets||[]).find(b=>b.stakeCents===500);
+    checks.push({ok:settled(single),label:!single?'$5 bet not entered':settled(single)?'$5 bet settled':'$5 bet unsettled'});
   }
-  const single=(w.bets||[]).find(b=>b.stakeCents===500);
-  checks.push({ok:settled(single),label:!single?'$5 bet not entered':settled(single)?'$5 bet settled':'$5 bet unsettled'});
   return {week:w.week,started:true,isCurrent:w.week===workflowWeek,needsAttention:checks.some(x=>!x.ok),checks};
 }
 function summaries(data){
