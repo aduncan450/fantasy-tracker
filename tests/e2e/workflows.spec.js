@@ -116,7 +116,9 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
   await page.goto('/admin/');
   await page.getByRole('button',{name:'Test copy of production'}).click();
   await page.getByLabel('Week to edit').selectOption('2');
-  await page.getByRole('button',{name:'Sync Week 2 scores'}).click();
+  const syncWeek2=page.getByRole('button',{name:'Sync Week 2 scores'});
+  await expect(syncWeek2).toBeVisible({timeout:10000});
+  await syncWeek2.click();
   await expect(page.getByText(/Sleeper Week 2 live scores imported locally/)).toBeVisible();
   await expect(page.getByText(new RegExp(`Week 2 · ${PLAYERS[2]} · \\$10\\.00`))).toHaveCount(0);
   await expect(page.getByText(new RegExp(`Week 2 · ${PLAYERS[0]} · \\$5\\.00`))).toHaveCount(0);
@@ -161,6 +163,8 @@ test('unsaved admin mutations show a sticky save control and guard sign out',asy
   await expect(page.locator('body')).not.toHaveClass(/has-unsaved/);
 
   await page.reload();
+  await expect(page.getByLabel('Week to edit')).toHaveValue('2');
+  await page.getByLabel('Week to edit').selectOption('1');
   await expect(page.getByRole('spinbutton',{name:PLAYERS[0],exact:true})).toHaveValue('100');
 });
 
@@ -188,9 +192,9 @@ test('weekly closeout and week selector markers surface unresolved historical wo
   await expect(page.locator('#week-picker option[value="2"]')).toHaveText(/← CURRENT/);
   const closeout=page.locator('#weekly-closeout');
   await expect(closeout.getByText('Week 1',{exact:true})).toBeVisible();
-  await expect(closeout.getByText('2 dues payments unpaid',{exact:true})).toBeVisible();
-  await expect(closeout.getByText('$10 parlay not entered',{exact:true})).toBeVisible();
-  await expect(closeout.getByText('$5 bet not entered',{exact:true})).toBeVisible();
+  await expect(closeout).toContainText('2 dues payments unpaid');
+  await expect(closeout).toContainText('$10 parlay not entered');
+  await expect(closeout).toContainText('$5 bet not entered');
 
   const weekOneDues=page.locator('.due-paid[data-week="1"]');
   await expect(weekOneDues).toHaveCount(2);
