@@ -1,1 +1,0 @@
-export async function x(url){return fetch(url)}
