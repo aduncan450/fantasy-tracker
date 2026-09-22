@@ -49,7 +49,7 @@ test('public dashboard shows detected outcomes read-only without changing pot ac
   await expect(page.getByText('miss · auto',{exact:true})).toHaveCount(2);
   await expect(page.getByText('placed · auto won · $5.00',{exact:true})).toBeVisible();
   await expect(page.getByText('AUTO results are read-only until the commissioner saves the official status in Admin.')).toBeVisible();
-  await expect(page.locator('.summary-grid .metric').first()).toContainText('-$15.00');
+  await expect(page.locator('[data-summary="pot"]')).toContainText('-$15.00');
   await expect(page.getByText('placed · $10.00',{exact:true})).toBeVisible();
 });
 
