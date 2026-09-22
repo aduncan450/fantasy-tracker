@@ -53,7 +53,7 @@ The admin can edit scores, mark each derived due paid/unpaid, create/update bets
 
 Admin in-memory mutations are tracked with explicit dirty state. After an Apply/import/sync/payment/direct-entry action changes tracker data without persisting it, the portal shows **UNSAVED CHANGES** plus a fixed mobile-friendly **Save now** control. Successful production or TEST MODE persistence clears the dirty state. Browser unloads and destructive admin actions warn before discarding dirty data. Draft text that still requires an existing **Apply** action is tracked separately and must not be falsely represented as saved tracker data. Week changes are intercepted before the core week-change handler so dismissing the draft-discard warning reliably preserves both the current week and the draft values.
 
-The admin also derives a **Weekly closeout** checklist from existing tracker state; no new closeout fields are stored. Started/current weeks are evaluated for score finality where applicable, regular-season dues payment completion, overall parlay settlement, individual parlay-leg completion, and $5 bet settlement. The week selector marks the derived workflow week with `← CURRENT`, unresolved started weeks with `•`, and cleared started weeks with `✓`. Future untouched weeks remain unmarked.
+The admin also derives a **Weekly closeout** checklist from existing tracker state; no new closeout fields are stored. Started/current weeks are evaluated for score finality where applicable, regular-season dues payment completion, overall parlay settlement, individual parlay-leg completion, and $5 bet settlement. Week 1 is exempt from bet-entry checks because there is no preceding funded betting period. The week selector marks the derived workflow week with `← CURRENT`, unresolved started weeks with `•`, and cleared started weeks with `✓`. Future untouched weeks remain unmarked.
 
 Automated bet-result checking is deliberately separate from persistence/accounting. **Check results** is read-only. **Apply detected statuses locally** only changes the current admin form/data in memory. Production Supabase and pot/accounting change only after the existing main save action. Payout values and overall parlay status remain commissioner-entered.
 
@@ -81,7 +81,7 @@ The top summary is one cohesive panel with only an outer container border. **Wee
 
 The header uses uppercase **BUFF HUSKY FANTASY TRACKER** preceded by the green vertical bar, followed by `2026–2027 SEASON | WEEK X`. The last commissioner update date/time sits directly below on one line with evenly distributed fields. The header intentionally has no mascot, mountain illustration, or other decorative art.
 
-Current matchup lifecycle belongs in the matchup section: **UPCOMING** before live scores, **LIVE · SLEEPER** while the current-week overlay is active, and **FINAL** when saved scores are final. The current-week matchup list uses the same stacked matchup-card pattern as recent results rather than a separate desktop-only two-column treatment. Internal implementation/explainer copy such as how Sleeper refreshes scores is not displayed publicly.
+Current matchup lifecycle belongs in the matchup section: **UPCOMING** before live scores, **LIVE · SLEEPER** while the current-week overlay is active, and **FINAL** when saved scores are final. The current-week matchup list uses the same stacked matchup-card pattern as recent results rather than a separate desktop-only two-column treatment. When the current week's saved scores are final, the same compact right-aligned dues pills used in recent matchups appear beneath the current matchup list; they are omitted entirely while the week is upcoming or live. Internal implementation/explainer copy such as how Sleeper refreshes scores is not displayed publicly.
 
 Recent completed matchups are labeled **RECENT MATCHUPS** and each result card spans the available section width. Final winners may use a restrained green gradient and trophy icon. Preserve muted loser colors: the unique lowest scorer uses muted red and the other matchup loser uses muted orange. Compact dues chips show only `Name · Amount`, omit the rule explanation, and are right-aligned beneath the result.
 
@@ -166,20 +166,5 @@ Automated regression tests are the default repeatable QA layer. Run `npm test` w
 13. PrizePicks actual-stake differences never affect live pot accounting.
 14. Public live Sleeper data is display-only and never canonical accounting state.
 15. Frontend changes must invalidate changed browser-cached assets and transitive dependencies.
-16. Documentation must remain synchronized with implementation.
-17. Previously verified deterministic behavior should be protected by automated regression tests whenever practical; tests must never write production league data.
-18. External bet-result feeds may display or propose outcomes but must never directly write canonical league data, payouts, overall parlay status, player statistics, ledger entries, or pot state.
-19. Commissioner-saved bet statuses always take precedence over automatic public result overlays.
-20. Admin dirty state, unapplied-draft state, closeout status, attention markers, and public calendar-week display state are derived/transient only.
-21. Admin workflow week and public calendar week are intentionally different concepts and must not be collapsed into one implementation.
-22. The public dashboard advances at Thursday 12:00 AM America/Chicago, not when the prior week becomes complete.
-
-## 18. Automated QA architecture
-The test suite deliberately stays lightweight and free to run in the public GitHub repository.
-
-- `node --test` exercises deterministic league behavior, including dues/accounting, Week 17 constraints, normalization, bet parsing/evaluation, and public Thursday calendar-week boundaries.
-- Playwright serves the static app locally and intercepts Supabase/Sleeper/ESPN requests. Browser tests exercise the real admin/public JavaScript without production writes.
-- Public calendar-dependent browser tests freeze their date so CI remains stable across future weeks; unit tests separately verify the real Thursday rollover boundary.
-- Core browser scenarios run in desktop Chromium and an iPhone-sized project.
-- `.github/workflows/qa.yml` installs dependencies/browser and runs `npm test` on every push to `main` and on pull requests.
-- Manual QA findings that expose reproducible regressions should become automated regression tests whenever practical.
+16. Documentation must remain synchronized with implemented behavior.
+17. TEST MODE must never write league changes to production Supabase.
