@@ -61,9 +61,28 @@ function summaries(data){
   const workflowWeek=currentWeek(data),dues=duesRows(data);
   return {workflowWeek,rows:data.weeks.map(w=>closeout(data,w,workflowWeek,dues))};
 }
+function proxyWeekPicker(select){
+  if(select.dataset.qolProxy==='true')return select;
+  const original=select,proxy=original.cloneNode(true);
+  proxy.dataset.qolProxy='true';
+  original.replaceWith(proxy);
+  proxy.addEventListener('change',()=>{
+    const next=proxy.value,previous=draftWeekValue||lastWeekValue||original.value;
+    if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
+      proxy.value=previous;
+      return;
+    }
+    if(draftDirty)clearDraft();
+    lastWeekValue=next;
+    original.value=next;
+    original.dispatchEvent(new Event('change',{bubbles:true}));
+  });
+  return proxy;
+}
 function decorateWeekPicker(data){
-  const select=document.querySelector('#week-picker');
+  let select=document.querySelector('#week-picker');
   if(!select)return;
+  select=proxyWeekPicker(select);
   const {workflowWeek,rows}=summaries(data),byWeek=new Map(rows.map(x=>[x.week,x]));
   for(const option of select.options){
     const week=Number(option.value),w=data.weeks.find(x=>x.week===week),row=byWeek.get(week);
@@ -105,8 +124,8 @@ function renderEnhancements(){
   const data=bridge.getData?.();
   if(!data)return;
   ensureActions();
-  ensureCloseout(data);
   decorateWeekPicker(data);
+  ensureCloseout(data);
   ensureDock();
   syncDirtyUi();
 }
@@ -128,23 +147,7 @@ app.addEventListener('submit',e=>{
   if(e.target.matches?.('#scores,#bets,#sleeper-map')){clearDraft();markDirty()}
 },true);
 app.addEventListener('change',e=>{
-  if(e.target.matches?.('.due-paid')){markDirty();return}
-  if(!e.target.matches?.('#week-picker'))return;
-  if(!draftDirty){lastWeekValue=e.target.value;return}
-  const previous=draftWeekValue||lastWeekValue||e.target.value;
-  if(confirm('Discard unapplied form edits and change weeks?')){
-    clearDraft();
-    lastWeekValue=e.target.value;
-    return;
-  }
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  e.target.value=previous;
-  setTimeout(()=>{
-    const select=document.querySelector('#week-picker');
-    if(select)select.value=previous;
-    lastWeekValue=previous;
-  },0);
+  if(e.target.matches?.('.due-paid'))markDirty();
 },true);
 app.addEventListener('click',e=>{
   const target=e.target.closest?.('button,a');
