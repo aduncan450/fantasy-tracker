@@ -9,43 +9,22 @@ permissions:
   contents: read
 
 jobs:
-  unit:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install test dependencies
-        run: npm install
-      - name: Run unit QA
-        run: npm run test:unit
 
-  e2e:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        spec:
-          - tests/e2e/admin-startup.spec.js
-          - tests/e2e/app.spec.js
-          - tests/e2e/bet-results.spec.js
-          - tests/e2e/public-bet-results.spec.js
-          - tests/e2e/public-redesign.spec.js
-          - tests/e2e/workflows.spec.js
-    name: e2e (${{ matrix.spec }})
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Install test dependencies
         run: npm install
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run spec
-        run: npx playwright test ${{ matrix.spec }}
+
+      - name: Run automated QA
+        run: npm test
