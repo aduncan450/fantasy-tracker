@@ -37,7 +37,7 @@ async function authenticateAdmin(page){
   await page.addInitScript(()=>localStorage.setItem('bh_session',JSON.stringify({access_token:'test-token',refresh_token:'test-refresh',expires_at:Date.now()+86400000})));
 }
 async function startCleanTestMode(page){
-  await page.getByRole('button',{name:'Test mode',exact:true}).click();
+  await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
   await page.getByRole('button',{name:'Test clean league'}).click();
 }
 
