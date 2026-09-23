@@ -28,7 +28,7 @@ function ensureHeaderTestButton(){
     button.addEventListener('click',()=>{
       const dialog=ensureTestDialog();
       if(!dialog.querySelector('#test-production')||!dialog.querySelector('#test-clean'))return;
-      dialog.showModal();
+      if(!dialog.open)dialog.showModal();
     });
     header.append(button);
   }
@@ -37,22 +37,25 @@ function ensureHeaderTestButton(){
 
 function moveTestControls(){
   const trigger=ensureHeaderTestButton();
-  const productionButton=app.querySelector('#test-production');
-  const cleanButton=app.querySelector('#test-clean');
+  const existingDialog=document.querySelector('#test-mode-dialog');
+  const productionButton=app.querySelector('#test-production')||existingDialog?.querySelector('#test-production');
+  const cleanButton=app.querySelector('#test-clean')||existingDialog?.querySelector('#test-clean');
   const inTestMode=document.body.classList.contains('test-mode');
   if(!productionButton||!cleanButton){if(trigger)trigger.hidden=true;return}
-  const card=productionButton.closest('.card');
-  const actions=productionButton.closest('.actions');
-  const dialog=ensureTestDialog();
+  const dialog=existingDialog||ensureTestDialog();
   const target=dialog.querySelector('.admin-test-dialog-actions');
-  target.replaceChildren();
-  target.append(productionButton,cleanButton);
-  productionButton.classList.add('ghost');
-  cleanButton.classList.add('ghost');
-  productionButton.addEventListener('click',()=>dialog.close(),{once:true});
-  cleanButton.addEventListener('click',()=>dialog.close(),{once:true});
-  actions?.remove();
-  card?.remove();
+  if(productionButton.parentElement!==target||cleanButton.parentElement!==target){
+    const card=productionButton.closest('.card');
+    const actions=productionButton.closest('.actions');
+    target.replaceChildren();
+    target.append(productionButton,cleanButton);
+    productionButton.classList.add('ghost');
+    cleanButton.classList.add('ghost');
+    productionButton.addEventListener('click',()=>dialog.close(),{once:true});
+    cleanButton.addEventListener('click',()=>dialog.close(),{once:true});
+    actions?.remove();
+    card?.remove();
+  }
   if(trigger)trigger.hidden=inTestMode;
 }
 
