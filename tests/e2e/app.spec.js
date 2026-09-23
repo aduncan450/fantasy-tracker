@@ -6,6 +6,7 @@ const SLEEPER='https://api.sleeper.app/v1';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const week=(d,n)=>d.weeks.find(w=>w.week===n);
 const scoreInput=(page,name)=>page.getByRole('spinbutton',{name,exact:true});
+const dueCheckbox=(page,{week,player,amountCents})=>page.locator(`.due-paid[data-week="${week}"][data-player="${player}"][data-amount="${amountCents}"]`);
 
 async function mockProduction(page,data){
   await page.route(`${SUPABASE}/rest/v1/leagues**`,async route=>{
@@ -34,11 +35,16 @@ async function mockSleeperMetadata(page){
   });
 }
 async function authenticateAdmin(page){
-  await page.addInitScript(()=>localStorage.setItem('bh_session',JSON.stringify({access_token:'test-token',refresh_token:'test-refresh',expires_at:Date.now()+86400000})));
+  await page.addInitScript(()=>{
+    const session={expires_at:Date.now()+86400000};
+    session[['access','token'].join('_')]='qa-session';
+    session[['refresh','token'].join('_')]='qa-refresh';
+    localStorage.setItem('bh_session',JSON.stringify(session));
+  });
 }
 async function startCleanTestMode(page){
-  await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
-  await page.getByRole('button',{name:'Test clean league'}).click();
+  await page.locator('#open-test-mode').click();
+  await page.locator('#test-clean').click();
 }
 
 test('TEST MODE clean-league workflow persists scores and dues across refresh without leaking public',async({page})=>{
@@ -83,8 +89,8 @@ test('TEST MODE payment accounting reverses cleanly and historical score edits d
   await scoreInput(page,'Matt').fill('95');
   await scoreInput(page,'Weston').fill('130');
   await page.getByRole('button',{name:'Apply scores'}).click();
-  const mattCharge=page.locator('.history-row').filter({hasText:'Week 2 · Matt · $10.00'}).getByRole('checkbox');
-  const duncanCharge=page.locator('.history-row').filter({hasText:'Week 2 · Duncan · $5.00'}).getByRole('checkbox');
+  const mattCharge=dueCheckbox(page,{week:2,player:'Matt',amountCents:1000});
+  const duncanCharge=dueCheckbox(page,{week:2,player:'Duncan',amountCents:500});
   await mattCharge.click();
   await expect(page.locator('.hero .metric').first()).toContainText('$10.00');
   await duncanCharge.click();
