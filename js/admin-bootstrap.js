@@ -1,5 +1,5 @@
 const app=document.querySelector('#app');
-const RECOVERY_VERSION='20260923-admin-recovery1';
+const RECOVERY_VERSION='20260923-sleeper-compact1';
 const TEST_MODE_KEY='bh_test_mode',TEST_DATA_KEY='bh_test_data',TEST_SEED_KEY='bh_test_seed';
 const RECOVERED_KEY='bh_admin_recovered_test_mode';
 
