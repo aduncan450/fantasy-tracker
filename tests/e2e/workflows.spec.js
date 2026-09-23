@@ -140,6 +140,7 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
   await page.goto('/admin/');
   await openTestModeLauncher(page);
   await page.getByRole('button',{name:'Test copy of production'}).click();
+  await expect(page.getByText('TEST MODE started from a production snapshot.')).toBeVisible();
   await page.getByLabel('Week to edit').selectOption('2');
   const syncWeek2=page.getByRole('button',{name:'Sync Week 2 scores'});
   await expect(syncWeek2).toBeVisible({timeout:10000});
@@ -209,12 +210,12 @@ test('unapplied form drafts warn before changing weeks',async({page})=>{
 test('weekly closeout and week selector markers surface unresolved historical work',async({page})=>{
   await openCleanTestMode(page);
 
-  await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/← CURRENT/);
+  await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/←/);
   for(const [i,player] of PLAYERS.entries())await page.getByRole('spinbutton',{name:player,exact:true}).fill(String(100+i*10));
   await page.getByRole('button',{name:'Apply scores'}).click();
 
   await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/•/);
-  await expect(page.locator('#week-picker option[value="2"]')).toHaveText(/← CURRENT/);
+  await expect(page.locator('#week-picker option[value="2"]')).toHaveText(/←/);
   const closeout=page.locator('#weekly-closeout');
   await expect(closeout.getByText('Week 1',{exact:true})).toBeVisible();
   await expect(closeout).toContainText('2 dues payments unpaid');
