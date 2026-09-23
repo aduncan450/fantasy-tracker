@@ -193,16 +193,9 @@ function compactBetCopy(){
   const form=app.querySelector('#bets');
   const card=form?.closest('.card');
   if(!card)return;
-  const auto=app.querySelector('#auto-bet-results');
-  if(auto){
-    const intro=auto.querySelector('h3 + p.muted');
-    if(intro)intro.textContent='CHECK FINAL ESPN RESULTS. APPLY LOCALLY, THEN SAVE ALL CHANGES TO PERSIST.';
-    const muted=[...auto.querySelectorAll(':scope > p.muted')];
-    muted.slice(1).forEach(p=>p.remove());
-  }
   const parlayEyebrow=[...card.querySelectorAll('.eyebrow')].find(el=>el.textContent.includes('$10 PARLAY'));
   const parlayNote=parlayEyebrow?.nextElementSibling;
-  if(parlayNote?.matches('p.muted'))parlayNote.textContent='SAVE LEGS AS THEY SETTLE.';
+  if(parlayNote?.matches('p.muted'))parlayNote.remove();
   const bettingOnly=[...card.querySelectorAll(':scope > p.muted')].find(p=>p.textContent.includes('Betting-only period'));
   if(bettingOnly)bettingOnly.textContent='BETTING ONLY — NO SCORES OR DUES.';
 }
