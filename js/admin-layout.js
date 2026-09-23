@@ -63,7 +63,20 @@ function compactActions(){
 
 function compactStatus(){
   const hero=app.querySelector('.hero');
-  if(hero)hero.classList.add('admin-sticky-status');
+  if(!hero)return;
+  hero.classList.add('admin-sticky-status');
+  const picker=app.querySelector('#week-picker');
+  if(!picker)return;
+  picker.setAttribute('aria-label','Week to edit');
+  picker.classList.add('admin-sticky-week-picker');
+  const metrics=hero.querySelectorAll('.metric');
+  const editingMetric=metrics[1];
+  if(!editingMetric)return;
+  editingMetric.classList.add('admin-editing-metric');
+  editingMetric.querySelector('strong')?.remove();
+  if(picker.parentElement!==editingMetric)editingMetric.append(picker);
+  const pickerCard=[...app.querySelectorAll('.card')].find(card=>card.querySelector('#week-picker'));
+  pickerCard?.remove();
 }
 
 function movePublicView(){
