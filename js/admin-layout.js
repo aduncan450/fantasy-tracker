@@ -193,11 +193,19 @@ function compactBetCopy(){
   const form=app.querySelector('#bets');
   const card=form?.closest('.card');
   if(!card)return;
-  const parlayEyebrow=[...card.querySelectorAll('.eyebrow')].find(el=>el.textContent.includes('$10 PARLAY'));
+  const parlayEyebrow=[...card.querySelectorAll('.eyebrow')].find(el=>el.textContent.toUpperCase().includes('$10 PARLAY'));
   const parlayNote=parlayEyebrow?.nextElementSibling;
   if(parlayNote?.matches('p.muted'))parlayNote.remove();
   const bettingOnly=[...card.querySelectorAll(':scope > p.muted')].find(p=>p.textContent.includes('Betting-only period'));
   if(bettingOnly)bettingOnly.textContent='BETTING ONLY — NO SCORES OR DUES.';
+
+  const saveLegs=card.querySelector('#save-leg-results');
+  if(saveLegs){
+    saveLegs.classList.remove('ghost');
+    saveLegs.classList.add('admin-apply-scores');
+  }
+  const applyBets=[...form.querySelectorAll(':scope > button')].find(button=>button.type!=='button');
+  if(applyBets)applyBets.classList.add('admin-apply-scores');
 }
 
 function movePublicView(){
