@@ -36,12 +36,18 @@ test('sync label rewrite is guarded against no-op text mutations',()=>{
   assert.match(layout,/if\(sync\.textContent!==syncText\)sync\.textContent=syncText/);
 });
 
-test('TEST MODE trigger stays hidden until dialog controls are ready and survives enhancement rerenders',()=>{
+test('TEST MODE launcher is hidden until live core controls are ready',()=>{
   assert.match(layout,/button\.hidden=true/);
-  assert.match(layout,/const existingDialog=document\.querySelector\('#test-mode-dialog'\)/);
-  assert.match(layout,/app\.querySelector\('#test-production'\)\|\|existingDialog\?\.querySelector\('#test-production'\)/);
-  assert.match(layout,/app\.querySelector\('#test-clean'\)\|\|existingDialog\?\.querySelector\('#test-clean'\)/);
-  assert.match(layout,/if\(!productionButton\|\|!cleanButton\)\{if\(trigger\)trigger\.hidden=true;return\}/);
-  assert.match(layout,/if\(trigger\)trigger\.hidden=inTestMode/);
-  assert.match(layout,/if\(!dialog\.querySelector\('#test-production'\)\|\|!dialog\.querySelector\('#test-clean'\)\)return/);
+  assert.match(layout,/trigger\.hidden=inTestMode\|\|!productionButton\|\|!cleanButton/);
+  assert.match(layout,/if\(!app\.querySelector\('#test-production'\)\|\|!app\.querySelector\('#test-clean'\)\)return/);
+});
+
+test('TEST MODE dialog proxies stable core controls instead of moving them across DOM roots',()=>{
+  assert.match(layout,/id="test-production-dialog"/);
+  assert.match(layout,/id="test-clean-dialog"/);
+  assert.match(layout,/const source=app\.querySelector\(mode==='production'\?'#test-production':'#test-clean'\)/);
+  assert.match(layout,/source\.click\(\)/);
+  assert.match(layout,/card\.hidden=true/);
+  assert.doesNotMatch(layout,/target\.append\(productionButton,cleanButton\)/);
+  assert.doesNotMatch(layout,/target\.replaceChildren\(\)/);
 });
