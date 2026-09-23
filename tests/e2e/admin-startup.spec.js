@@ -28,6 +28,7 @@ test('admin discards incomplete TEST MODE storage instead of rendering a blank p
   });
   await page.goto('/admin/');
   await expect(page.getByText('Broken TEST MODE data was discarded. Production data reloaded.')).toBeVisible();
+  await page.getByRole('button',{name:'Test mode',exact:true}).click();
   await expect(page.getByRole('button',{name:'Test clean league'})).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('bh_test_mode'))).toBeNull();
 });
