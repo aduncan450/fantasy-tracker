@@ -1,6 +1,7 @@
 const app=document.querySelector('#app');
 const header=document.querySelector('.site-header');
 let queued=false;
+const sleeperNames=new Map();
 
 function ensureTestDialog(){
   let dialog=document.querySelector('#test-mode-dialog');
@@ -78,13 +79,77 @@ function compactStatus(){
   pickerCard?.remove();
 }
 
+async function hydrateSleeperName(id,title){
+  if(!id||!title)return;
+  if(sleeperNames.has(id)){title.textContent=sleeperNames.get(id);return}
+  try{
+    const response=await fetch(`https://api.sleeper.app/v1/league/${encodeURIComponent(id)}`);
+    if(!response.ok)return;
+    const league=await response.json();
+    const name=String(league?.name||'').trim();
+    if(!name)return;
+    sleeperNames.set(id,name);
+    if(title.isConnected)title.textContent=name;
+  }catch{}
+}
+
+function compactSleeper(){
+  const eyebrow=[...app.querySelectorAll('.eyebrow')].find(el=>el.textContent.trim().toUpperCase()==='SLEEPER');
+  const card=eyebrow?.closest('.card');
+  if(!card||card.classList.contains('admin-sleeper-card'))return;
+  const title=card.querySelector('h2');
+  const idLine=[...card.querySelectorAll('p.muted')].find(el=>/\d{8,}/.test(el.textContent));
+  const edit=card.querySelector('#edit-sleeper-map');
+  if(!title||!idLine)return;
+  const id=(idLine.textContent.match(/\d{8,}/)||[])[0]||'';
+  card.classList.add('admin-sleeper-card');
+  const head=document.createElement('div');
+  head.className='admin-sleeper-head';
+  const info=document.createElement('div');
+  info.className='admin-sleeper-info';
+  const identity=document.createElement('div');
+  identity.className='admin-sleeper-identity';
+  idLine.classList.add('admin-sleeper-id');
+  title.textContent=title.textContent.trim().toUpperCase()==='LEAGUE ID'?'SLEEPER LEAGUE':title.textContent;
+  identity.append(title,idLine);
+  info.append(eyebrow,identity);
+  head.append(info);
+  if(edit){
+    edit.classList.add('admin-sleeper-edit');
+    head.append(edit);
+    const actions=edit.closest('.actions');
+    if(actions&&!actions.children.length)actions.remove();
+  }
+  card.prepend(head);
+  hydrateSleeperName(id,title);
+}
+
+function compactScoreHeader(){
+  const sync=app.querySelector('#sync-sleeper');
+  if(!sync)return;
+  const card=sync.closest('.card');
+  if(!card||card.classList.contains('admin-scores-card'))return;
+  const eyebrow=card.querySelector('.eyebrow');
+  const title=card.querySelector('h2');
+  if(!eyebrow||!title)return;
+  card.classList.add('admin-scores-card');
+  const head=document.createElement('div');
+  head.className='admin-scores-head';
+  const copy=document.createElement('div');
+  copy.className='admin-scores-title';
+  copy.append(eyebrow,title);
+  sync.classList.add('admin-sync-scores');
+  head.append(copy,sync);
+  card.prepend(head);
+}
+
 function movePublicView(){
   header?.querySelector('a[href="../"]')?.classList.add('admin-header-public-hidden');
   if(!window.__fantasyAdmin?.isAuthenticated?.()||app.querySelector('.admin-public-footer'))return;
   app.insertAdjacentHTML('beforeend','<div class="admin-public-footer"><a class="button ghost" href="../">PUBLIC VIEW</a></div>');
 }
 
-function apply(){compactStatus();compactActions();moveTestControls();movePublicView()}
+function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();movePublicView()}
 const observer=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;apply()})});
 observer.observe(app,{childList:true,subtree:true});
 apply();
