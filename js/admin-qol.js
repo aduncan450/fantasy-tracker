@@ -150,5 +150,7 @@ app.addEventListener('click',e=>{
 },true);
 
 const observer=new MutationObserver(()=>{if(renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;reconcileAfterRender()})});
-observer.observe(app,{childList:true,subtree:true});
+// Core admin rerenders replace #app's top-level children. Watching descendants is unnecessary
+// here and risks observer feedback loops when this module decorates nested controls.
+observer.observe(app,{childList:true});
 reconcileAfterRender();
