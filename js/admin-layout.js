@@ -1,6 +1,5 @@
 const app=document.querySelector('#app');
 const header=document.querySelector('.site-header');
-let queued=false;
 const sleeperNames=new Map();
 
 function ensureTestDialog(){
@@ -159,8 +158,5 @@ function movePublicView(){
 }
 
 function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();movePublicView()}
-const observer=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;apply()})});
-// Only watch top-level admin rerenders. Layout code mutates descendants itself; observing the
-// full subtree can create a self-triggering MutationObserver loop that starves the event loop.
-observer.observe(app,{childList:true});
+window.addEventListener('fantasy-admin-rendered',apply);
 apply();
