@@ -24,7 +24,12 @@ function ensureHeaderTestButton(){
     button.type='button';
     button.className='button ghost admin-test-trigger';
     button.textContent='TEST MODE';
-    button.addEventListener('click',()=>document.querySelector('#test-mode-dialog')?.showModal());
+    button.hidden=true;
+    button.addEventListener('click',()=>{
+      const dialog=ensureTestDialog();
+      if(!dialog.querySelector('#test-production')||!dialog.querySelector('#test-clean'))return;
+      dialog.showModal();
+    });
     header.append(button);
   }
   return button;
@@ -35,8 +40,7 @@ function moveTestControls(){
   const productionButton=app.querySelector('#test-production');
   const cleanButton=app.querySelector('#test-clean');
   const inTestMode=document.body.classList.contains('test-mode');
-  if(trigger)trigger.hidden=inTestMode;
-  if(!productionButton||!cleanButton)return;
+  if(!productionButton||!cleanButton){if(trigger)trigger.hidden=true;return}
   const card=productionButton.closest('.card');
   const actions=productionButton.closest('.actions');
   const dialog=ensureTestDialog();
@@ -49,6 +53,7 @@ function moveTestControls(){
   cleanButton.addEventListener('click',()=>dialog.close(),{once:true});
   actions?.remove();
   card?.remove();
+  if(trigger)trigger.hidden=inTestMode;
 }
 
 function compactActions(){
