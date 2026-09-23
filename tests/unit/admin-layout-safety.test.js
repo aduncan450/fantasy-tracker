@@ -35,3 +35,7 @@ test('admin enhancement modules subscribe to the centralized render event',()=>{
 test('sync label rewrite is guarded against no-op text mutations',()=>{
   assert.match(layout,/if\(sync\.textContent!==syncText\)sync\.textContent=syncText/);
 });
+
+test('TEST MODE launcher creates its dialog before opening it',()=>{
+  assert.match(layout,/addEventListener\('click',\(\)=>\{\s*const dialog=ensureTestDialog\(\);\s*if\(!dialog\.open\)dialog\.showModal\(\);\s*\}\)/);
+});
