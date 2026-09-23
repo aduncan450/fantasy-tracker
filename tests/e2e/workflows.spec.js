@@ -44,6 +44,8 @@ async function openCleanTestMode(page,production=initialLeague()){
 }
 async function fillLeg(page,owner,{player=owner,prop='rushing yards',direction='over',line=1}={}){
   const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:owner})});
+  const toggle=leg.locator('.structured-pick-toggle');
+  if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
   await leg.locator('.bet-player').fill(player);
   await leg.locator('.bet-prop').selectOption(prop);
   await leg.locator('.bet-direction').selectOption(direction);
@@ -85,6 +87,10 @@ test('partial parlay leg outcomes persist independently while overall parlay sta
   await expect(page.getByText(/Parlay leg results saved to TEST MODE/)).toBeVisible();
 
   await page.reload();
+  for(const player of PLAYERS){
+    const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:player})});
+    if(await leg.locator('.structured-pick-toggle').getAttribute('aria-expanded')==='false')await leg.locator('.structured-pick-toggle').click();
+  }
   await expect(page.locator(`select[name="legstatus-${PLAYERS[0]}"]`)).toHaveValue('hit');
   await expect(page.locator(`select[name="legstatus-${PLAYERS[2]}"]`)).toHaveValue('miss');
   await expect(page.locator(`select[name="legstatus-${PLAYERS[1]}"]`)).toHaveValue('pending');
