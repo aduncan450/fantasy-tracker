@@ -37,22 +37,26 @@ function ensureHeaderTestButton(){
 
 function moveTestControls(){
   const trigger=ensureHeaderTestButton();
-  const productionButton=app.querySelector('#test-production');
-  const cleanButton=app.querySelector('#test-clean');
-  const inTestMode=document.body.classList.contains('test-mode');
-  if(!productionButton||!cleanButton){if(trigger)trigger.hidden=true;return}
-  const card=productionButton.closest('.card');
-  const actions=productionButton.closest('.actions');
   const dialog=ensureTestDialog();
   const target=dialog.querySelector('.admin-test-dialog-actions');
-  target.replaceChildren();
-  target.append(productionButton,cleanButton);
-  productionButton.classList.add('ghost');
-  cleanButton.classList.add('ghost');
-  productionButton.addEventListener('click',()=>dialog.close(),{once:true});
-  cleanButton.addEventListener('click',()=>dialog.close(),{once:true});
-  actions?.remove();
-  card?.remove();
+  const appProduction=app.querySelector('#test-production');
+  const appClean=app.querySelector('#test-clean');
+  const productionButton=appProduction||target.querySelector('#test-production');
+  const cleanButton=appClean||target.querySelector('#test-clean');
+  const inTestMode=document.body.classList.contains('test-mode');
+  if(!productionButton||!cleanButton){if(trigger)trigger.hidden=true;return}
+  if(appProduction&&appClean){
+    const card=appProduction.closest('.card');
+    const actions=appProduction.closest('.actions');
+    target.replaceChildren();
+    target.append(appProduction,appClean);
+    appProduction.classList.add('ghost');
+    appClean.classList.add('ghost');
+    appProduction.addEventListener('click',()=>dialog.close(),{once:true});
+    appClean.addEventListener('click',()=>dialog.close(),{once:true});
+    actions?.remove();
+    card?.remove();
+  }
   if(trigger)trigger.hidden=inTestMode;
 }
 
