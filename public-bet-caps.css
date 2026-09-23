@@ -1,0 +1,5 @@
+.public-dashboard .bets-card .parlay-leg span,
+.public-dashboard .bets-card .bet-title-copy small,
+.public-dashboard .bets-card .bet > span:first-child,
+.public-dashboard .bets-card .bet-meta{ text-transform:uppercase; }
+.public-dashboard .bets-card .parlay-leg b{ text-transform:none; }
