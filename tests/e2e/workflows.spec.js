@@ -4,6 +4,7 @@ import {SUPABASE_URL} from '../../js/config.js';
 import {SLEEPER_LEAGUE_ID} from '../../js/sleeper.js';
 
 const SLEEPER_API='https://api.sleeper.app/v1';
+const ESPN_API='https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 const PLAYERS=initialLeague().players;
 const clone=x=>JSON.parse(JSON.stringify(x));
 
@@ -22,6 +23,7 @@ async function mockSleeperMetadata(page){
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({name:'QA League',season:'2026'})});
   });
 }
+async function mockEspnRosters(page){await page.route(`${ESPN_API}/teams/**/roster`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({athletes:[]})}))}
 
 async function authenticateAdmin(page){
   await page.addInitScript(()=>{
@@ -35,15 +37,27 @@ async function authenticateAdmin(page){
 async function openCleanTestMode(page,production=initialLeague()){
   await mockProduction(page,production);
   await mockSleeperMetadata(page);
+  await mockEspnRosters(page);
   await authenticateAdmin(page);
   await page.goto('/admin/');
   await page.getByRole('button',{name:'Test clean league'}).click();
 }
+async function fillLeg(page,owner,{player=owner,prop='rushing yards',direction='over',line=1}={}){
+  const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:owner})});
+  await leg.locator('.bet-player').fill(player);
+  await leg.locator('.bet-prop').selectOption(prop);
+  await leg.locator('.bet-direction').selectOption(direction);
+  await leg.locator('.bet-line').fill(String(line));
+}
+async function fillSingleMoneyline(page,team='BUF'){
+  const single=page.locator('.single-structured');
+  await single.locator('.single-type').selectOption('moneyline');
+  await single.locator('.single-team').fill(team);
+}
 
 test('PrizePicks actual wager persists without changing live pot accounting',async({page})=>{
   await openCleanTestMode(page);
-
-  await page.locator('textarea[name="single-desc"]').fill('QA single bet');
+  await fillSingleMoneyline(page);
   await page.getByRole('button',{name:'Apply bets'}).click();
   await expect(page.getByRole('heading',{name:'$5 bet stake adjustments'})).toBeVisible();
 
@@ -64,7 +78,7 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
 test('partial parlay leg outcomes persist independently while overall parlay stays placed',async({page})=>{
   await openCleanTestMode(page);
 
-  for(const player of PLAYERS)await page.locator(`textarea[name="leg-${player}"]`).fill(`${player} QA prop`);
+  for(const player of PLAYERS)await fillLeg(page,player);
   await page.locator(`select[name="legstatus-${PLAYERS[0]}"]`).selectOption('hit');
   await page.locator(`select[name="legstatus-${PLAYERS[2]}"]`).selectOption('miss');
   await page.getByRole('button',{name:'Save leg results'}).click();
@@ -106,6 +120,7 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
 
   await mockProduction(page,production);
   await mockSleeperMetadata(page);
+  await mockEspnRosters(page);
   await authenticateAdmin(page);
   await page.route(`${SLEEPER_API}/state/nfl`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({week:nflWeek})}));
   await page.route(`${SLEEPER_API}/league/**/matchups/2`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([
@@ -202,11 +217,11 @@ test('weekly closeout and week selector markers surface unresolved historical wo
   await weekOneDues.nth(1).check();
 
   for(const player of PLAYERS){
-    await page.locator(`textarea[name="leg-${player}"]`).fill(`${player} QA prop`);
+    await fillLeg(page,player);
     await page.locator(`select[name="legstatus-${player}"]`).selectOption('hit');
   }
   await page.locator('select[name="parlay-status"]').selectOption('won');
-  await page.locator('textarea[name="single-desc"]').fill('QA single bet');
+  await fillSingleMoneyline(page);
   await page.locator('select[name="single-status"]').selectOption('lost');
   await page.getByRole('button',{name:'Apply bets'}).click();
 
