@@ -49,17 +49,17 @@ Routine regression coverage belongs in code, not repeated manual checklists.
 
 Manual testing remains appropriate for visual judgment, real-device ergonomics, and novel workflows not yet represented in the suite, but it should not be the primary way previously verified business behavior is rechecked.
 
-## Admin DOM observer safety
+## Admin DOM rerender safety
 
-The admin portal has twice been frozen by recursive `MutationObserver` behavior. The failure mode is important: a companion script observes DOM mutations, then writes to the same observed subtree on every callback; that write creates another mutation, causing an endless microtask loop. The page may render partially, but the browser event loop is starved and the portal becomes unusable. Playwright may hang instead of producing a normal assertion failure.
+The admin portal has repeatedly been frozen by independent `MutationObserver` loops. The failure mode is important: a companion script observes DOM mutations, then writes to the same observed area; that write creates another mutation, which can trigger that script or another companion script again. The page may render partially while the browser event loop is starved, making the portal appear completely down.
 
-1. Do not add a broad `MutationObserver` with `{subtree:true}` to an admin module that also mutates that observed subtree unless the writes are provably idempotent and guarded.
-2. Prefer observing only top-level `#app` child changes when the purpose is merely to detect a core admin rerender.
-3. Before assigning `textContent`, `innerHTML`, attributes, or replacing/inserting/removing nodes from observer-driven code, compare the desired state with the current state and skip no-op writes.
-4. Never use an unconditional DOM write inside a callback that can be retriggered by that same write.
-5. If a UI enhancement can be rendered directly in `admin.js` rather than repaired repeatedly after render, prefer the direct rendering path. Remove superseded post-render hacks when practical.
-6. Any regression involving a frozen/blank admin portal must get a short-timeout browser startup test that proves the event loop settles and the primary controls remain interactive.
-7. When CI starts taking dramatically longer after an admin DOM change, inspect for observer/microtask loops immediately instead of waiting for the workflow timeout.
+1. `js/admin-bootstrap.js` is the **only** admin module allowed to create a `MutationObserver` for `#app`. It observes top-level child replacement only and emits the `fantasy-admin-rendered` event after a core rerender.
+2. Admin companion modules (`admin-layout.js`, `admin-qol.js`, `admin-bet-entry.js`, `bet-adjustments-admin.js`, `bet-results-admin.js`, and future equivalents) must subscribe to `fantasy-admin-rendered`; they must not add their own DOM observers.
+3. The bootstrap coordinator must ignore enhancement-only top-level mutations so enhancement rendering cannot recursively signal itself.
+4. Companion render functions must remain idempotent where practical. Before assigning text/attributes or inserting/removing nodes, skip no-op writes when the existing state already matches.
+5. If a UI enhancement can be rendered directly in `admin.js` rather than repaired after render, prefer the direct rendering path. Remove superseded post-render hacks when practical.
+6. Any regression involving a frozen/blank admin portal must get a short-timeout browser startup/interactivity test and a structural unit test that protects this single-observer architecture.
+7. When CI takes dramatically longer after an admin DOM change, inspect for rerender feedback immediately. Do not treat a timeout as an unrelated flaky test.
 
 ## Admin mutation and dirty-state discipline
 
