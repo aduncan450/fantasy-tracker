@@ -189,6 +189,19 @@ function compactDues(){
   }
 }
 
+function compactBetMeta(form){
+  for(const editor of form.querySelectorAll('.bet-editor')){
+    const status=editor.querySelector('select[name="parlay-status"],select[name="single-status"]')?.closest('label');
+    const payout=editor.querySelector('input[name="parlay-payout"],input[name="single-payout"]')?.closest('label');
+    if(!status||!payout)continue;
+    status.childNodes[0].textContent='Status';
+    payout.childNodes[0].textContent='Payout';
+    let row=editor.querySelector(':scope > .admin-bet-meta-row');
+    if(!row){row=document.createElement('div');row.className='admin-bet-meta-row';editor.insertBefore(row,status)}
+    row.append(status,payout);
+  }
+}
+
 function compactBetCopy(){
   const form=app.querySelector('#bets');
   const card=form?.closest('.card');
@@ -198,6 +211,7 @@ function compactBetCopy(){
   if(parlayNote?.matches('p.muted'))parlayNote.remove();
   const bettingOnly=[...card.querySelectorAll(':scope > p.muted')].find(p=>p.textContent.includes('Betting-only period'));
   if(bettingOnly)bettingOnly.textContent='BETTING ONLY — NO SCORES OR DUES.';
+  compactBetMeta(form);
 
   const saveLegs=card.querySelector('#save-leg-results');
   if(saveLegs){
