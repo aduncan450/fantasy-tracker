@@ -1,4 +1,4 @@
-import {detectBetResults} from './bet-results.js?v=20260922-structured-bets';
+import {detectBetResults} from './bet-results.js?v=20260923-interceptions1';
 
 let rendering=false,lastCheck=null,busy=false;
 const admin=()=>window.__fantasyAdmin;
