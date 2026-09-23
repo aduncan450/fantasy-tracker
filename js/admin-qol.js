@@ -1,7 +1,7 @@
 import {currentWeek,duesRows,weekResult} from './calculations.js?v=20260920-live-sleeper';
 
 const app=document.querySelector('#app');
-let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null,renderQueued=false;
+let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null;
 const handledMessages=new WeakSet();
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -149,8 +149,5 @@ app.addEventListener('click',e=>{
   if(target.matches('#test-production,#test-clean')&&!discardGuard('Discard unsaved or unapplied changes and start TEST MODE?')){e.preventDefault();e.stopImmediatePropagation();return}
 },true);
 
-const observer=new MutationObserver(()=>{if(renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;reconcileAfterRender()})});
-// Core admin rerenders replace #app's top-level children. Watching descendants is unnecessary
-// here and risks observer feedback loops when this module decorates nested controls.
-observer.observe(app,{childList:true});
+window.addEventListener('fantasy-admin-rendered',reconcileAfterRender);
 reconcileAfterRender();
