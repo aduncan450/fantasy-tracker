@@ -1,3 +1,4 @@
+body>.site-header{ text-transform:uppercase; }
 #app{ text-transform:uppercase; }
 #app .fantasy-player-name,
 #app .structured-pick-owner{ text-transform:none; }
