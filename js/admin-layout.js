@@ -24,7 +24,10 @@ function ensureHeaderTestButton(){
     button.type='button';
     button.className='button ghost admin-test-trigger';
     button.textContent='TEST MODE';
-    button.addEventListener('click',()=>document.querySelector('#test-mode-dialog')?.showModal());
+    button.addEventListener('click',()=>{
+      const dialog=ensureTestDialog();
+      if(!dialog.open)dialog.showModal();
+    });
     header.append(button);
   }
   return button;
