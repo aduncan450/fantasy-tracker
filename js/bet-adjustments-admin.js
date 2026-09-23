@@ -1,7 +1,7 @@
 import {money} from './calculations.js?v=20260920-week16';
 
 const EXPECTED_CENTS=500;
-let rendering=false,renderQueued=false;
+let rendering=false;
 const admin=()=>window.__fantasyAdmin;
 const actualFor=(data,week)=>{const v=data.betPlacerActualBets?.[String(week)];return Number.isFinite(Number(v))?Number(v):null};
 const owedFor=(data,week)=>{const actual=actualFor(data,week);return actual===null?null:Math.max(0,EXPECTED_CENTS-actual)};
@@ -14,7 +14,5 @@ function updateVisibleTotals(data){collect(data);for(const w of trackedWeeks(dat
 function render(){if(rendering)return;rendering=true;try{const bridge=admin(),app=document.querySelector('#app');document.querySelector('#weekly-bet-adjustments')?.remove();if(!bridge?.isAuthenticated?.()||!app)return;const data=bridge.getData();app.insertAdjacentHTML('beforeend',card(data));document.querySelectorAll('#weekly-bet-adjustments .actual-bet').forEach(input=>input.addEventListener('input',()=>{try{updateVisibleTotals(data)}catch(e){input.setCustomValidity(e.message);input.reportValidity();input.setCustomValidity('')}}))}finally{rendering=false}}
 window.__fantasyBetAdjustments={collect:collectCurrent};
 document.addEventListener('click',e=>{if(e.target.closest?.('#save'))collectCurrent()},true);
-const app=document.querySelector('#app');
-const observer=new MutationObserver(()=>{if(rendering||document.querySelector('#weekly-bet-adjustments')||renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;if(!document.querySelector('#weekly-bet-adjustments'))render()})});
-observer.observe(app,{childList:true});
+window.addEventListener('fantasy-admin-rendered',render);
 render();
