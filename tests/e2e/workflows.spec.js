@@ -33,13 +33,16 @@ async function authenticateAdmin(page){
     localStorage.setItem('bh_session',JSON.stringify(session));
   });
 }
-
+async function openTestModeLauncher(page){
+  await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
+}
 async function openCleanTestMode(page,production=initialLeague()){
   await mockProduction(page,production);
   await mockSleeperMetadata(page);
   await mockEspnRosters(page);
   await authenticateAdmin(page);
   await page.goto('/admin/');
+  await openTestModeLauncher(page);
   await page.getByRole('button',{name:'Test clean league'}).click();
 }
 async function fillLeg(page,owner,{player=owner,prop='rushing yards',direction='over',line=1}={}){
@@ -116,7 +119,7 @@ test('TEST MODE reset restores seed and exit discards isolated data',async({page
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'Exit & discard'}).click();
   await expect(page.getByText('TEST MODE',{exact:true})).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Test clean league'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'TEST MODE',exact:true})).toBeVisible();
 });
 
 test('Sleeper admin sync locks live dues then generates them after NFL week advances',async({page})=>{
@@ -135,6 +138,7 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
   ])}));
 
   await page.goto('/admin/');
+  await openTestModeLauncher(page);
   await page.getByRole('button',{name:'Test copy of production'}).click();
   await page.getByLabel('Week to edit').selectOption('2');
   const syncWeek2=page.getByRole('button',{name:'Sync Week 2 scores'});
