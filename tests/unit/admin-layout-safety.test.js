@@ -1,18 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const layout=read('../../js/admin-layout.js');
-const observerDriven=[
-  ['admin layout',layout],
-  ['admin QoL',read('../../js/admin-qol.js')],
-  ['admin bet entry',read('../../js/admin-bet-entry.js')]
-];
+const jsDir=new URL('../../js/',import.meta.url);
+const adminScripts=readdirSync(jsDir)
+  .filter(name=>name.endsWith('.js')&&(name.includes('admin')||name==='admin.js'))
+  .map(name=>[name,read(`../../js/${name}`)]);
 
-test('admin DOM enhancers do not watch descendant mutations they also rewrite',()=>{
-  for(const [name,source] of observerDriven){
-    assert.doesNotMatch(source,/observe\(app,\s*\{[^}]*subtree\s*:\s*true/,`${name} must not observe the full #app subtree`);
+test('admin scripts do not observe the full #app subtree',()=>{
+  for(const [name,source] of adminScripts){
+    assert.doesNotMatch(source,/\.observe\(app,\s*\{[^}]*subtree\s*:\s*true/,`${name} must not observe the full #app subtree`);
   }
 });
 
