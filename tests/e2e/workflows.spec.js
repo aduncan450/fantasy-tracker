@@ -82,6 +82,8 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
 
 test('partial parlay leg outcomes persist independently while overall parlay stays placed',async({page})=>{
   await openCleanTestMode(page);
+  await expect(page.getByRole('button',{name:'Check Week 1 results'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Auto-check bet results'})).toHaveCount(0);
 
   for(const player of PLAYERS)await fillLeg(page,player);
   await page.locator(`select[name="legstatus-${PLAYERS[0]}"]`).selectOption('hit');
@@ -163,7 +165,7 @@ test('Week 17 is betting-only in the admin UI',async({page})=>{
   await expect(page.getByRole('heading',{name:'Week 17 bets · Final betting week'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Matchups & scores'})).toHaveCount(0);
   await expect(page.getByRole('button',{name:'Sync Week 17 scores'})).toHaveCount(0);
-  await expect(page.getByText(/Betting-only period after the fantasy playoffs/)).toBeVisible();
+  await expect(page.getByText('BETTING ONLY — NO SCORES OR DUES.')).toBeVisible();
 });
 
 test('unsaved admin mutations show a sticky save control and guard sign out',async({page})=>{
