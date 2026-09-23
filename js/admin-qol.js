@@ -70,8 +70,8 @@ function decorateWeekPicker(data){
   for(const option of select.options){
     const week=Number(option.value),w=data.weeks.find(x=>x.week===week),row=byWeek.get(week);
     if(!w)continue;
-    const type=w.type==='playoff'?' · Playoffs':w.type==='betting'?' · Final betting':'';
-    const marker=!row?.started?'':week===workflowWeek?' · ← CURRENT':row.needsAttention?' · •':' · ✓';
+    const type=w.type==='playoff'?' · ⌗':w.type==='betting'?' · BET':'';
+    const marker=!row?.started?'':week===workflowWeek?' · ←':row.needsAttention?' · •':' · ✓';
     const text=`Week ${week}${type}${marker}`;
     if(option.textContent!==text)option.textContent=text;
   }
