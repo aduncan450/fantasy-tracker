@@ -1,11 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildPlayerPick,parsePlayerPick,buildSinglePick,parseSinglePick,normalizeEspnRoster} from '../../js/bet-entry.js';
+import {PLAYER_PROPS,buildPlayerPick,parsePlayerPick,buildSinglePick,parseSinglePick,normalizeEspnRoster} from '../../js/bet-entry.js';
 
 test('builds and parses structured player props',()=>{
   const pick=buildPlayerPick({player:'Josh Allen',prop:'passing yards',direction:'over',line:'274.5'});
   assert.equal(pick,'Josh Allen over 274.5 passing yards');
   assert.deepEqual(parsePlayerPick(pick),{player:'Josh Allen',direction:'over',line:274.5,prop:'passing yards'});
+  assert.equal(PLAYER_PROPS.find(([value])=>value==='interceptions')?.[1],'INT');
+  const interceptions=buildPlayerPick({player:'Josh Allen',prop:'interceptions',direction:'under',line:'0.5'});
+  assert.equal(interceptions,'Josh Allen under 0.5 interceptions');
+  assert.deepEqual(parsePlayerPick(interceptions),{player:'Josh Allen',direction:'under',line:0.5,prop:'interceptions'});
+  assert.deepEqual(parsePlayerPick('Josh Allen over 0.5 INT'),{player:'Josh Allen',direction:'over',line:0.5,prop:'interceptions'});
 });
 
 test('builds structured moneyline, spread, and game total descriptions',()=>{
