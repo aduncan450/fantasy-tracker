@@ -87,7 +87,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('pending');
   await expect(page.locator('select[name="single-status"]')).toHaveValue('placed');
 
-  await page.getByRole('button',{name:'Apply 5 detected statuses locally'}).click();
+  await page.locator('#apply-bet-results').click();
   await expect(page.getByText('Bets applied locally. Save when ready.')).toBeVisible();
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('hit');
   await expect(page.locator('select[name="legstatus-Jacob"]')).toHaveValue('miss');
