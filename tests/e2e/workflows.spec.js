@@ -43,7 +43,7 @@ async function openCleanTestMode(page,production=initialLeague()){
   await authenticateAdmin(page);
   await page.goto('/admin/');
   await openTestModeLauncher(page);
-  await page.locator('#test-clean').click();
+  await page.locator('#test-clean-dialog').click();
 }
 async function fillLeg(page,owner,{player=owner,prop='rushing yards',direction='over',line=1}={}){
   const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:owner})});
@@ -141,7 +141,7 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
 
   await page.goto('/admin/');
   await openTestModeLauncher(page);
-  await page.locator('#test-production').click();
+  await page.locator('#test-production-dialog').click();
   await expect(page.getByText('TEST MODE started from a production snapshot.')).toBeVisible();
   await page.getByLabel('Week to edit').selectOption('2');
   const syncWeek2=page.getByRole('button',{name:'Sync Week 2 scores'});
