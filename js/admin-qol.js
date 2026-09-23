@@ -23,7 +23,6 @@ function clearDirty(){dirty=false;syncDirtyUi()}
 function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
 function clearDraft(){draftDirty=false;draftWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
-
 window.addEventListener('beforeunload',e=>{if(!dirty&&!draftDirty)return;e.preventDefault();e.returnValue=''});
 
 function legacyLegs(data,b){
@@ -77,9 +76,6 @@ function decorateWeekPicker(data){
     if(option.textContent!==text)option.textContent=text;
   }
   lastWeekValue=select.value;
-  const help=select.closest('.card')?.querySelector('.muted');
-  const helpText='← marks the workflow week, • marks a started week that still needs attention, and ✓ marks a cleared started week. Weeks 15–16 are playoffs; Week 17 is betting-only.';
-  if(help&&help.textContent!==helpText)help.textContent=helpText;
 }
 function closeoutCard(data){
   const {rows}=summaries(data),visible=rows.filter(x=>x.started&&(x.needsAttention||x.isCurrent)),older=rows.filter(x=>x.started&&x.needsAttention&&!x.isCurrent).length;
@@ -95,12 +91,13 @@ function ensureDock(){
   document.querySelector('#sticky-save')?.addEventListener('click',()=>document.querySelector('#save')?.click());
 }
 function ensureCloseout(data){
-  const picker=document.querySelector('#week-picker')?.closest('.card');
-  if(!picker)return;
+  if(!document.querySelector('#week-picker'))return;
+  const anchor=document.querySelector('.admin-utility-card')||document.querySelector('.admin-sticky-status')||document.querySelector('.hero');
+  if(!anchor)return;
   const html=closeoutCard(data),existing=document.querySelector('#weekly-closeout');
   if(existing?.outerHTML===html)return;
   existing?.remove();
-  picker.insertAdjacentHTML('afterend',html);
+  anchor.insertAdjacentHTML('afterend',html);
 }
 function renderEnhancements(){
   const bridge=admin();
@@ -130,17 +127,12 @@ app.addEventListener('input',e=>{
   if(e.target.matches?.('#weekly-bet-adjustments .actual-bet'))markDirty();
   else if(e.target.closest?.('#scores,#bets,#sleeper-map'))markDraft();
 },true);
-app.addEventListener('submit',e=>{
-  if(e.target.matches?.('#scores,#bets,#sleeper-map')){clearDraft();markDirty()}
-},true);
+app.addEventListener('submit',e=>{if(e.target.matches?.('#scores,#bets,#sleeper-map')){clearDraft();markDirty()}},true);
 app.addEventListener('change',e=>{
   if(e.target.matches?.('#week-picker')){
     const select=e.target,next=select.value,previous=draftWeekValue||lastWeekValue||next;
     if(draftDirty&&!confirm('Discard unapplied form edits and change weeks?')){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      queueMicrotask(()=>{select.value=previous;lastWeekValue=previous});
-      return;
+      e.preventDefault();e.stopImmediatePropagation();queueMicrotask(()=>{select.value=previous;lastWeekValue=previous});return;
     }
     if(draftDirty)clearDraft();
     lastWeekValue=next;
@@ -151,21 +143,12 @@ app.addEventListener('change',e=>{
 app.addEventListener('click',e=>{
   const target=e.target.closest?.('button,a');
   if(!target)return;
-  if(target.matches('#save,#sticky-save')&&draftDirty){
-    alert('Apply or discard the current form edits before saving.');
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    return;
-  }
+  if(target.matches('#save,#sticky-save')&&draftDirty){alert('Apply or discard the current form edits before saving.');e.preventDefault();e.stopImmediatePropagation();return}
   if(target.matches('#edit-sleeper-map'))markDirty();
   if(target.matches('#logout')&&!discardGuard('Sign out and discard unsaved or unapplied changes?')){e.preventDefault();e.stopImmediatePropagation();return}
   if(target.matches('#test-production,#test-clean')&&!discardGuard('Discard unsaved or unapplied changes and start TEST MODE?')){e.preventDefault();e.stopImmediatePropagation();return}
 },true);
 
-const observer=new MutationObserver(()=>{
-  if(renderQueued)return;
-  renderQueued=true;
-  queueMicrotask(()=>{renderQueued=false;reconcileAfterRender()});
-});
+const observer=new MutationObserver(()=>{if(renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;reconcileAfterRender()})});
 observer.observe(app,{childList:true,subtree:true});
 reconcileAfterRender();
