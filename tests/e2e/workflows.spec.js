@@ -64,7 +64,7 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
   await openCleanTestMode(page);
   await fillSingleMoneyline(page);
   await page.getByRole('button',{name:'Apply bets'}).click();
-  await expect(page.getByRole('heading',{name:'$5 bet stake adjustments'})).toBeVisible();
+  await expect(page.locator('#weekly-bet-adjustments')).toBeVisible();
 
   const potValue=page.locator('.hero .metric').first().locator('strong');
   const potBefore=await potValue.innerText();
