@@ -42,3 +42,9 @@ test('TEST MODE trigger stays hidden until dialog controls are ready',()=>{
   assert.match(layout,/if\(trigger\)trigger\.hidden=inTestMode/);
   assert.match(layout,/if\(!dialog\.querySelector\('#test-production'\)\|\|!dialog\.querySelector\('#test-clean'\)\)return/);
 });
+
+test('TEST MODE readiness survives enhancement rerenders after controls move into dialog',()=>{
+  assert.match(layout,/const productionButton=appProduction\|\|target\.querySelector\('#test-production'\)/);
+  assert.match(layout,/const cleanButton=appClean\|\|target\.querySelector\('#test-clean'\)/);
+  assert.match(layout,/if\(appProduction&&appClean\)\{/);
+});
