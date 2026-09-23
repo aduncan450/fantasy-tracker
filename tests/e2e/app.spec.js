@@ -37,8 +37,10 @@ async function authenticateAdmin(page){
   await page.addInitScript(()=>localStorage.setItem('bh_session',JSON.stringify({access_token:'test-token',refresh_token:'test-refresh',expires_at:Date.now()+86400000})));
 }
 async function startCleanTestMode(page){
-  await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
-  await page.getByRole('button',{name:'Test clean league'}).click();
+  await page.locator('#open-test-mode').click();
+  const cleanButton=page.locator('#test-clean-dialog');
+  await expect(cleanButton).toBeVisible();
+  await cleanButton.click();
 }
 
 test('TEST MODE clean-league workflow persists scores and dues across refresh without leaking public',async({page})=>{

@@ -2,15 +2,24 @@ const app=document.querySelector('#app');
 const header=document.querySelector('.site-header');
 const sleeperNames=new Map();
 
+function startTestMode(mode,dialog){
+  const source=app.querySelector(mode==='production'?'#test-production':'#test-clean');
+  if(!source)return;
+  dialog.close();
+  source.click();
+}
+
 function ensureTestDialog(){
   let dialog=document.querySelector('#test-mode-dialog');
   if(dialog)return dialog;
   dialog=document.createElement('dialog');
   dialog.id='test-mode-dialog';
   dialog.className='admin-test-dialog';
-  dialog.innerHTML='<div class="admin-test-dialog-head"><strong>TEST MODE</strong><button type="button" class="ghost" data-close-test>×</button></div><p class="muted">CHOOSE A STARTING POINT.</p><div class="admin-test-dialog-actions"></div>';
+  dialog.innerHTML='<div class="admin-test-dialog-head"><strong>TEST MODE</strong><button type="button" class="ghost" data-close-test>×</button></div><p class="muted">CHOOSE A STARTING POINT.</p><div class="admin-test-dialog-actions"><button id="test-production-dialog" type="button" class="ghost">Test copy of production</button><button id="test-clean-dialog" type="button" class="ghost">Test clean league</button></div>';
   document.body.append(dialog);
   dialog.querySelector('[data-close-test]')?.addEventListener('click',()=>dialog.close());
+  dialog.querySelector('#test-production-dialog')?.addEventListener('click',()=>startTestMode('production',dialog));
+  dialog.querySelector('#test-clean-dialog')?.addEventListener('click',()=>startTestMode('clean',dialog));
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
   return dialog;
 }
@@ -26,8 +35,8 @@ function ensureHeaderTestButton(){
     button.textContent='TEST MODE';
     button.hidden=true;
     button.addEventListener('click',()=>{
+      if(!app.querySelector('#test-production')||!app.querySelector('#test-clean'))return;
       const dialog=ensureTestDialog();
-      if(!dialog.querySelector('#test-production')||!dialog.querySelector('#test-clean'))return;
       if(!dialog.open)dialog.showModal();
     });
     header.append(button);
@@ -35,28 +44,20 @@ function ensureHeaderTestButton(){
   return button;
 }
 
-function moveTestControls(){
+function syncTestControls(){
   const trigger=ensureHeaderTestButton();
-  const existingDialog=document.querySelector('#test-mode-dialog');
-  const productionButton=app.querySelector('#test-production')||existingDialog?.querySelector('#test-production');
-  const cleanButton=app.querySelector('#test-clean')||existingDialog?.querySelector('#test-clean');
+  const productionButton=app.querySelector('#test-production');
+  const cleanButton=app.querySelector('#test-clean');
   const inTestMode=document.body.classList.contains('test-mode');
-  if(!productionButton||!cleanButton){if(trigger)trigger.hidden=true;return}
-  const dialog=existingDialog||ensureTestDialog();
-  const target=dialog.querySelector('.admin-test-dialog-actions');
-  if(productionButton.parentElement!==target||cleanButton.parentElement!==target){
+  if(productionButton&&cleanButton){
     const card=productionButton.closest('.card');
-    const actions=productionButton.closest('.actions');
-    target.replaceChildren();
-    target.append(productionButton,cleanButton);
-    productionButton.classList.add('ghost');
-    cleanButton.classList.add('ghost');
-    productionButton.addEventListener('click',()=>dialog.close(),{once:true});
-    cleanButton.addEventListener('click',()=>dialog.close(),{once:true});
-    actions?.remove();
-    card?.remove();
+    if(card){
+      card.hidden=true;
+      card.classList.add('admin-test-controls-source');
+    }
+    ensureTestDialog();
   }
-  if(trigger)trigger.hidden=inTestMode;
+  if(trigger)trigger.hidden=inTestMode||!productionButton||!cleanButton;
 }
 
 function compactActions(){
@@ -236,6 +237,6 @@ function movePublicView(){
   app.insertAdjacentHTML('beforeend','<div class="admin-public-footer"><a class="button ghost" href="../">PUBLIC VIEW</a></div>');
 }
 
-function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();compactDues();compactBetCopy();movePublicView()}
+function apply(){compactStatus();compactActions();syncTestControls();compactSleeper();compactScoreHeader();compactDues();compactBetCopy();movePublicView()}
 window.addEventListener('fantasy-admin-rendered',apply);
 apply();
