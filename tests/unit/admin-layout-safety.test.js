@@ -35,3 +35,10 @@ test('admin enhancement modules subscribe to the centralized render event',()=>{
 test('sync label rewrite is guarded against no-op text mutations',()=>{
   assert.match(layout,/if\(sync\.textContent!==syncText\)sync\.textContent=syncText/);
 });
+
+test('TEST MODE trigger stays hidden until dialog controls are ready',()=>{
+  assert.match(layout,/button\.hidden=true/);
+  assert.match(layout,/if\(!productionButton\|\|!cleanButton\)\{if\(trigger\)trigger\.hidden=true;return\}/);
+  assert.match(layout,/if\(trigger\)trigger\.hidden=inTestMode/);
+  assert.match(layout,/if\(!dialog\.querySelector\('#test-production'\)\|\|!dialog\.querySelector\('#test-clean'\)\)return/);
+});
