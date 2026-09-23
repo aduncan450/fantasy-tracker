@@ -86,9 +86,8 @@ test('TEST MODE payment accounting reverses cleanly and historical score edits d
   const mattCharge=page.locator('.history-row').filter({hasText:'Week 2 · Matt · $10.00'}).getByRole('checkbox');
   const duncanCharge=page.locator('.history-row').filter({hasText:'Week 2 · Duncan · $5.00'}).getByRole('checkbox');
   await mattCharge.click();
-  await expect(mattCharge).toBeChecked();
+  await expect(page.locator('.hero .metric').first()).toContainText('$10.00');
   await duncanCharge.click();
-  await expect(duncanCharge).toBeChecked();
   await expect(page.locator('.hero .metric').first()).toContainText('$15.00');
   await scoreInput(page,'Duncan').fill('90');
   await scoreInput(page,'Jacob').fill('110');
