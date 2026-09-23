@@ -13,6 +13,7 @@ function statKey(category,key,label){const k=clean(key).replace(/ /g,''),c=clean
   if(k==='receptions'||(c==='receiving'&&l==='rec'))return 'receptions';
   if(k==='passingyards'||(c==='passing'&&l==='yds'))return 'passingYards';
   if(k==='passingtouchdowns'||(c==='passing'&&l==='td'))return 'passingTouchdowns';
+  if(k==='interceptions'||k==='passinginterceptions'||(c==='passing'&&l==='int'))return 'interceptions';
   return null;
 }
 
@@ -34,6 +35,7 @@ export function parseBetPick(text){const raw=String(text??'').trim();if(!raw)ret
       [/^receiving yards?$/, 'receivingYards','receiving yards'],
       [/^receptions?$/, 'receptions','receptions'],
       [/^passing yards?$/, 'passingYards','passing yards'],
+      [/^(?:interceptions?|ints?)$/, 'interceptions','interceptions'],
       [/^rushing (?:tds?|touchdowns?)$/, 'rushingTouchdowns','rushing touchdowns'],
       [/^receiving (?:tds?|touchdowns?)$/, 'receivingTouchdowns','receiving touchdowns'],
       [/^passing (?:tds?|touchdowns?)$/, 'passingTouchdowns','passing touchdowns'],
