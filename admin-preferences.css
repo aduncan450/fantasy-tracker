@@ -1,0 +1,9 @@
+#app{ text-transform:uppercase; }
+#app .fantasy-player-name,
+#app .structured-pick-owner{ text-transform:none; }
+#app input,
+#app select,
+#app textarea,
+#app button{ text-transform:uppercase; }
+#app .structured-pick-summary,
+#app .bet-preview{ text-transform:uppercase; }
