@@ -34,7 +34,7 @@ async function authenticateAdmin(page){
   });
 }
 async function openTestModeLauncher(page){
-  await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
+  await page.locator('#open-test-mode').click();
 }
 async function openCleanTestMode(page,production=initialLeague()){
   await mockProduction(page,production);
@@ -43,7 +43,7 @@ async function openCleanTestMode(page,production=initialLeague()){
   await authenticateAdmin(page);
   await page.goto('/admin/');
   await openTestModeLauncher(page);
-  await page.getByRole('button',{name:'Test clean league'}).click();
+  await page.locator('#test-clean').click();
 }
 async function fillLeg(page,owner,{player=owner,prop='rushing yards',direction='over',line=1}={}){
   const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:owner})});
@@ -121,7 +121,7 @@ test('TEST MODE reset restores seed and exit discards isolated data',async({page
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'Exit & discard'}).click();
   await expect(page.locator('body')).not.toHaveClass(/test-mode/);
-  await expect(page.getByRole('button',{name:'TEST MODE',exact:true})).toBeVisible();
+  await expect(page.locator('#open-test-mode')).toBeVisible();
 });
 
 test('Sleeper admin sync locks live dues then generates them after NFL week advances',async({page})=>{
@@ -141,7 +141,7 @@ test('Sleeper admin sync locks live dues then generates them after NFL week adva
 
   await page.goto('/admin/');
   await openTestModeLauncher(page);
-  await page.getByRole('button',{name:'Test copy of production'}).click();
+  await page.locator('#test-production').click();
   await expect(page.getByText('TEST MODE started from a production snapshot.')).toBeVisible();
   await page.getByLabel('Week to edit').selectOption('2');
   const syncWeek2=page.getByRole('button',{name:'Sync Week 2 scores'});
@@ -224,10 +224,10 @@ test('weekly closeout and week selector markers surface unresolved historical wo
   await expect(closeout).toContainText('$10 parlay not entered');
   await expect(closeout).toContainText('$5 bet not entered');
 
-  const weekOneDues=page.locator('.due-paid[data-week="1"]');
-  await expect(weekOneDues).toHaveCount(2);
-  await weekOneDues.nth(0).check();
-  await weekOneDues.nth(1).check();
+  const weekOneTen=page.locator('.due-paid[data-week="1"][data-amount="1000"]');
+  const weekOneFive=page.locator('.due-paid[data-week="1"][data-amount="500"]');
+  await weekOneTen.click();
+  await weekOneFive.click();
 
   for(const player of PLAYERS){
     await fillLeg(page,player);
