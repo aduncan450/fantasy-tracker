@@ -36,6 +36,10 @@ async function mockSleeperMetadata(page){
 async function authenticateAdmin(page){
   await page.addInitScript(()=>localStorage.setItem('bh_session',JSON.stringify({access_token:'test-token',refresh_token:'test-refresh',expires_at:Date.now()+86400000})));
 }
+async function startCleanTestMode(page){
+  await page.getByRole('button',{name:'Test mode',exact:true}).click();
+  await page.getByRole('button',{name:'Test clean league'}).click();
+}
 
 test('TEST MODE clean-league workflow persists scores and dues across refresh without leaking public',async({page})=>{
   const production=initialLeague();
@@ -43,7 +47,7 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await mockSleeperMetadata(page);
   await authenticateAdmin(page);
   await page.goto('/admin/');
-  await page.getByRole('button',{name:'Test clean league'}).click();
+  await startCleanTestMode(page);
   await expect(page.getByText('TEST MODE',{exact:true}).first()).toBeVisible();
   await scoreInput(page,'Duncan').fill('120');
   await scoreInput(page,'Matt').fill('110');
@@ -72,7 +76,7 @@ test('TEST MODE payment accounting reverses cleanly and historical score edits d
   await mockSleeperMetadata(page);
   await authenticateAdmin(page);
   await page.goto('/admin/');
-  await page.getByRole('button',{name:'Test clean league'}).click();
+  await startCleanTestMode(page);
   await page.getByLabel('Week to edit').selectOption('2');
   await scoreInput(page,'Duncan').fill('125');
   await scoreInput(page,'Jacob').fill('110');
