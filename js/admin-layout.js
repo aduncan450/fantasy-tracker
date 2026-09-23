@@ -2,8 +2,6 @@ const app=document.querySelector('#app');
 const header=document.querySelector('.site-header');
 let queued=false;
 
-function setText(el,text){if(el&&el.textContent!==text)el.textContent=text}
-
 function ensureTestDialog(){
   let dialog=document.querySelector('#test-mode-dialog');
   if(dialog)return dialog;
@@ -61,15 +59,6 @@ function compactActions(){
   if(!actions||!card)return;
   card.classList.add('admin-utility-card');
   actions.classList.add('admin-utility-actions');
-  setText(save,document.body.classList.contains('test-mode')?'SAVE TEST':'SAVE');
-  setText(app.querySelector('#export'),'EXPORT');
-  setText(app.querySelector('#logout'),'SIGN OUT');
-  const importInput=app.querySelector('#import');
-  const importLabel=importInput?.closest('label');
-  if(importLabel){
-    const textNode=[...importLabel.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);
-    if(textNode&&textNode.nodeValue!=='IMPORT')textNode.nodeValue='IMPORT';
-  }
 }
 
 function compactStatus(){
