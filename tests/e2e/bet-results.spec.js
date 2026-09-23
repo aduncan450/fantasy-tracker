@@ -32,6 +32,8 @@ async function authenticateAdmin(page){
 }
 async function fillLeg(page,owner,{player,prop='rushing yards',direction='over',line}){
   const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:owner})});
+  const toggle=leg.locator('.structured-pick-toggle');
+  if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
   await leg.locator('.bet-player').fill(player);
   await leg.locator('.bet-prop').selectOption(prop);
   await leg.locator('.bet-direction').selectOption(direction);
