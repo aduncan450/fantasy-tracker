@@ -1,6 +1,6 @@
 import {detectBetResults} from './bet-results.js?v=20260922-structured-bets';
 
-let rendering=false,renderQueued=false,lastCheck=null,busy=false;
+let rendering=false,lastCheck=null,busy=false;
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const selectedWeek=()=>Number(document.querySelector('#week-picker')?.value||0);
@@ -12,7 +12,5 @@ function panel(data,week){const check=lastCheck?.week===week?lastCheck:null,coun
 function render(){if(rendering)return;rendering=true;try{document.querySelector('#auto-bet-results')?.remove();const bridge=admin(),form=document.querySelector('#bets');if(!bridge?.isAuthenticated?.()||!form)return;const data=bridge.getData(),week=selectedWeek();form.insertAdjacentHTML('beforebegin',panel(data,week));document.querySelector('#check-bet-results')?.addEventListener('click',checkResults);document.querySelector('#apply-bet-results')?.addEventListener('click',applyResults)}finally{rendering=false}}
 async function checkResults(){const bridge=admin(),data=bridge?.getData?.(),week=selectedWeek(),inputs=currentInputs(data);if(!data||!week||!inputs)return;if(!inputs.parlayLegs.length&&!inputs.singleDescription){lastCheck={week,error:'Enter at least one bet description before checking results.'};render();return}busy=true;render();try{const detected=await detectBetResults({season:seasonYear(data),week,parlayLegs:inputs.parlayLegs,singleDescription:inputs.singleDescription});lastCheck={week,fingerprint:inputs.fingerprint,detected}}catch(error){lastCheck={week,error:`Could not check NFL results: ${error.message}`}}finally{busy=false;render()}}
 function applyResults(){const bridge=admin(),data=bridge?.getData?.(),week=selectedWeek(),inputs=currentInputs(data),check=lastCheck?.week===week?lastCheck:null;if(!data||!inputs||!check?.detected)return;if(inputs.fingerprint!==check.fingerprint){lastCheck={...check,error:'Bet descriptions changed after the result check. Check results again before applying.'};render();return}const form=document.querySelector('#bets');for(const leg of check.detected.legs||[]){if(!leg.result?.settled)continue;const select=form.elements.namedItem(`legstatus-${leg.player}`);if(select)select.value=leg.result.status}if(check.detected.single?.result?.settled){const select=form.elements.namedItem('single-status');if(select)select.value=check.detected.single.result.status}form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))}
-const app=document.querySelector('#app');
-const observer=new MutationObserver(()=>{if(rendering||document.querySelector('#auto-bet-results')||renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;if(!document.querySelector('#auto-bet-results'))render()})});
-observer.observe(app,{childList:true});
+window.addEventListener('fantasy-admin-rendered',render);
 render();
