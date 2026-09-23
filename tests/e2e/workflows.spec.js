@@ -118,7 +118,7 @@ test('TEST MODE reset restores seed and exit discards isolated data',async({page
 
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'Exit & discard'}).click();
-  await expect(page.getByText('TEST MODE',{exact:true})).toHaveCount(0);
+  await expect(page.locator('body')).not.toHaveClass(/test-mode/);
   await expect(page.getByRole('button',{name:'TEST MODE',exact:true})).toBeVisible();
 });
 
