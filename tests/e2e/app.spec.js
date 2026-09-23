@@ -38,7 +38,9 @@ async function authenticateAdmin(page){
 }
 async function startCleanTestMode(page){
   await page.locator('#open-test-mode').click();
-  await page.locator('#test-clean-dialog').click();
+  const cleanButton=page.locator('#test-clean-dialog');
+  await expect(cleanButton).toBeVisible();
+  await cleanButton.click();
 }
 
 test('TEST MODE clean-league workflow persists scores and dues across refresh without leaking public',async({page})=>{
