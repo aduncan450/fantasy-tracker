@@ -62,6 +62,7 @@ The admin portal has repeatedly been frozen by independent `MutationObserver` lo
 5. If a UI enhancement can be rendered directly in `admin.js` rather than repaired after render, prefer the direct rendering path. Remove superseded post-render hacks when practical.
 6. Any regression involving a frozen/blank admin portal must get a short-timeout browser startup/interactivity test and a structural unit test that protects this single-observer architecture.
 7. When CI takes dramatically longer after an admin DOM change, inspect for rerender feedback immediately. Do not treat a timeout as an unrelated flaky test.
+8. Enhancement launchers rendered outside `#app` must remain hidden or inert until the controls they expose have been moved into their final target and are ready for interaction. Never expose a clickable header/dialog trigger during the transient initial-render state when its target controls are still absent.
 
 ## Admin mutation and dirty-state discipline
 
