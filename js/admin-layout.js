@@ -89,7 +89,7 @@ async function hydrateSleeperName(id,title){
     const name=String(league?.name||'').trim();
     if(!name)return;
     sleeperNames.set(id,name);
-    if(title.isConnected)title.textContent=name;
+    if(title.isConnected&&title.textContent!==name)title.textContent=name;
   }catch{}
 }
 
@@ -110,7 +110,8 @@ function compactSleeper(){
   const identity=document.createElement('div');
   identity.className='admin-sleeper-identity';
   idLine.classList.add('admin-sleeper-id');
-  title.textContent=title.textContent.trim().toUpperCase()==='LEAGUE ID'?'SLEEPER LEAGUE':title.textContent;
+  const fallbackTitle=title.textContent.trim().toUpperCase()==='LEAGUE ID'?'SLEEPER LEAGUE':title.textContent;
+  if(title.textContent!==fallbackTitle)title.textContent=fallbackTitle;
   identity.append(title,idLine);
   info.append(eyebrow,identity);
   head.append(info);
@@ -132,8 +133,9 @@ function compactScoreHeader(){
   if(applyButton)applyButton.classList.add('admin-apply-scores');
   if(!sync)return;
   const week=app.querySelector('#week-picker')?.value||'';
-  sync.textContent=`SYNC W${week} SCORES`;
-  sync.setAttribute('aria-label',`Sync Week ${week} scores`);
+  const syncText=`SYNC W${week} SCORES`,syncLabel=`Sync Week ${week} scores`;
+  if(sync.textContent!==syncText)sync.textContent=syncText;
+  if(sync.getAttribute('aria-label')!==syncLabel)sync.setAttribute('aria-label',syncLabel);
   const card=sync.closest('.card');
   if(!card||card.classList.contains('admin-scores-card'))return;
   const eyebrow=card.querySelector('.eyebrow');
@@ -158,5 +160,7 @@ function movePublicView(){
 
 function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();movePublicView()}
 const observer=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;apply()})});
-observer.observe(app,{childList:true,subtree:true});
+// Only watch top-level admin rerenders. Layout code mutates descendants itself; observing the
+// full subtree can create a self-triggering MutationObserver loop that starves the event loop.
+observer.observe(app,{childList:true});
 apply();
