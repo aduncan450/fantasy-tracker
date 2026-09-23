@@ -125,8 +125,15 @@ function compactSleeper(){
 }
 
 function compactScoreHeader(){
+  const scores=app.querySelector('#scores');
+  if(!scores)return;
   const sync=app.querySelector('#sync-sleeper');
+  const applyButton=[...scores.querySelectorAll('button')].find(button=>button.type!=='button');
+  if(applyButton)applyButton.classList.add('admin-apply-scores');
   if(!sync)return;
+  const week=app.querySelector('#week-picker')?.value||'';
+  sync.textContent=`SYNC W${week} SCORES`;
+  sync.setAttribute('aria-label',`Sync Week ${week} scores`);
   const card=sync.closest('.card');
   if(!card||card.classList.contains('admin-scores-card'))return;
   const eyebrow=card.querySelector('.eyebrow');
