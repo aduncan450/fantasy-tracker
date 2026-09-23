@@ -68,6 +68,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await mockEspn(page);
   await authenticateAdmin(page);
   await page.goto('/admin/');
+  await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
   await page.getByRole('button',{name:'Test clean league'}).click();
   await page.getByLabel('Week to edit').selectOption('2');
 
