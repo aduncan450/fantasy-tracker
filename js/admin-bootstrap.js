@@ -1,7 +1,10 @@
 const app=document.querySelector('#app');
-const RECOVERY_VERSION='20260923-sleeper-compact1';
+const RECOVERY_VERSION='20260923-admin-events1';
 const TEST_MODE_KEY='bh_test_mode',TEST_DATA_KEY='bh_test_data',TEST_SEED_KEY='bh_test_seed';
 const RECOVERED_KEY='bh_admin_recovered_test_mode';
+const ADMIN_RENDER_EVENT='fantasy-admin-rendered';
+const ENHANCEMENT_SELECTOR='#weekly-bet-adjustments,#weekly-closeout,#save-dock,.admin-public-footer';
+let renderSignalQueued=false;
 
 function clearTestMode(){
   localStorage.removeItem(TEST_MODE_KEY);
@@ -29,6 +32,26 @@ function showFatal(error){
   document.querySelector('#recover-test-mode')?.addEventListener('click',()=>{clearTestMode();location.reload()});
   document.querySelector('#reload-admin')?.addEventListener('click',()=>location.reload());
 }
+function enhancementOnlyMutation(mutation){
+  const nodes=[...mutation.addedNodes,...mutation.removedNodes].filter(node=>node.nodeType===Node.ELEMENT_NODE);
+  return nodes.length>0&&nodes.every(node=>node.matches?.(ENHANCEMENT_SELECTOR));
+}
+function signalAdminRendered(){
+  if(renderSignalQueued)return;
+  renderSignalQueued=true;
+  setTimeout(()=>{
+    renderSignalQueued=false;
+    window.dispatchEvent(new Event(ADMIN_RENDER_EVENT));
+  },0);
+}
+
+// One coordinator observes core #app replacement. Companion modules listen for the render event
+// instead of creating their own MutationObservers. Enhancement-only top-level mutations are ignored
+// so post-render DOM work cannot recursively schedule itself.
+new MutationObserver(mutations=>{
+  if(mutations.every(enhancementOnlyMutation))return;
+  signalAdminRendered();
+}).observe(app,{childList:true});
 
 recoverObviouslyBrokenTestMode();
 try{
