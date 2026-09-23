@@ -56,7 +56,7 @@ test('admin event loop remains responsive after layout enhancements',async({page
   await page.goto('/admin/');
   const sync=page.getByRole('button',{name:'Sync Week 1 scores'});
   await expect(sync).toBeVisible({timeout:3000});
-  await expect(sync).toHaveText('SYNC W1 SCORES');
+  await expect(sync).toHaveText('SYNC SCORES');
   await expect.poll(()=>page.evaluate(()=>document.readyState)).toBe('complete');
   await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
   await expect(page.getByRole('button',{name:'Test clean league'})).toBeVisible({timeout:2000});
