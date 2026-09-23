@@ -132,7 +132,7 @@ function compactScoreHeader(){
   if(applyButton)applyButton.classList.add('admin-apply-scores');
   if(!sync)return;
   const week=app.querySelector('#week-picker')?.value||'';
-  const syncText=`SYNC W${week} SCORES`,syncLabel=`Sync Week ${week} scores`;
+  const syncText='SYNC SCORES',syncLabel=`Sync Week ${week} scores`;
   if(sync.textContent!==syncText)sync.textContent=syncText;
   if(sync.getAttribute('aria-label')!==syncLabel)sync.setAttribute('aria-label',syncLabel);
   const card=sync.closest('.card');
@@ -151,12 +151,50 @@ function compactScoreHeader(){
   card.prepend(head);
 }
 
+function compactDues(){
+  const heading=[...app.querySelectorAll('h2')].find(el=>el.textContent.trim().toUpperCase()==='DUES PAYMENTS');
+  const card=heading?.closest('.card');
+  const history=card?.querySelector('.history');
+  if(!card||!history||card.classList.contains('admin-dues-card'))return;
+  card.classList.add('admin-dues-card');
+  card.querySelector(':scope > p.muted')?.remove();
+  const rows=[...history.querySelectorAll('.history-row')];
+  if(!rows.length)return;
+  const unpaid=rows.filter(row=>!row.querySelector('.due-paid')?.checked);
+  const paid=rows.filter(row=>row.querySelector('.due-paid')?.checked);
+  history.replaceChildren();
+  const section=(label,items,className)=>{
+    const wrap=document.createElement('div');
+    wrap.className=`admin-dues-section ${className}`;
+    const title=document.createElement('div');
+    title.className='admin-dues-section-title';
+    title.innerHTML=`<strong>${label}</strong><span>${items.length}</span>`;
+    wrap.append(title,...items);
+    return wrap;
+  };
+  if(unpaid.length)history.append(section('UNPAID',unpaid,'admin-dues-unpaid'));
+  else{
+    const clear=document.createElement('p');
+    clear.className='admin-dues-clear';
+    clear.textContent='ALL DUES PAID';
+    history.append(clear);
+  }
+  if(paid.length){
+    const details=document.createElement('details');
+    details.className='admin-dues-paid';
+    const summary=document.createElement('summary');
+    summary.innerHTML=`<span>PAID</span><span class="admin-dues-paid-count">${paid.length}</span><span class="admin-dues-chevron">⌄</span>`;
+    details.append(summary,...paid);
+    history.append(details);
+  }
+}
+
 function movePublicView(){
   header?.querySelector('a[href="../"]')?.classList.add('admin-header-public-hidden');
   if(!window.__fantasyAdmin?.isAuthenticated?.()||app.querySelector('.admin-public-footer'))return;
   app.insertAdjacentHTML('beforeend','<div class="admin-public-footer"><a class="button ghost" href="../">PUBLIC VIEW</a></div>');
 }
 
-function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();movePublicView()}
+function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();compactDues();movePublicView()}
 window.addEventListener('fantasy-admin-rendered',apply);
 apply();
