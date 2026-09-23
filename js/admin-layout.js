@@ -37,7 +37,6 @@ function moveTestControls(){
   const inTestMode=document.body.classList.contains('test-mode');
   if(trigger)trigger.hidden=inTestMode;
   if(!productionButton||!cleanButton)return;
-
   const card=productionButton.closest('.card');
   const actions=productionButton.closest('.actions');
   const dialog=ensureTestDialog();
@@ -67,6 +66,7 @@ function compactStatus(){
   hero.classList.add('admin-sticky-status');
   const picker=app.querySelector('#week-picker');
   if(!picker)return;
+  const pickerCard=picker.closest('.card');
   picker.setAttribute('aria-label','Week to edit');
   picker.classList.add('admin-sticky-week-picker');
   const metrics=hero.querySelectorAll('.metric');
@@ -75,7 +75,6 @@ function compactStatus(){
   editingMetric.classList.add('admin-editing-metric');
   editingMetric.querySelector('strong')?.remove();
   if(picker.parentElement!==editingMetric)editingMetric.append(picker);
-  const pickerCard=[...app.querySelectorAll('.card')].find(card=>card.querySelector('#week-picker'));
   pickerCard?.remove();
 }
 
@@ -85,17 +84,7 @@ function movePublicView(){
   app.insertAdjacentHTML('beforeend','<div class="admin-public-footer"><a class="button ghost" href="../">PUBLIC VIEW</a></div>');
 }
 
-function apply(){
-  compactStatus();
-  compactActions();
-  moveTestControls();
-  movePublicView();
-}
-
-const observer=new MutationObserver(()=>{
-  if(queued)return;
-  queued=true;
-  queueMicrotask(()=>{queued=false;apply()});
-});
+function apply(){compactStatus();compactActions();moveTestControls();movePublicView()}
+const observer=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;apply()})});
 observer.observe(app,{childList:true,subtree:true});
 apply();
