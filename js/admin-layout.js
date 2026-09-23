@@ -189,12 +189,30 @@ function compactDues(){
   }
 }
 
+function compactBetCopy(){
+  const form=app.querySelector('#bets');
+  const card=form?.closest('.card');
+  if(!card)return;
+  const auto=app.querySelector('#auto-bet-results');
+  if(auto){
+    const intro=auto.querySelector('h3 + p.muted');
+    if(intro)intro.textContent='CHECK FINAL ESPN RESULTS. APPLY LOCALLY, THEN SAVE ALL CHANGES TO PERSIST.';
+    const muted=[...auto.querySelectorAll(':scope > p.muted')];
+    muted.slice(1).forEach(p=>p.remove());
+  }
+  const parlayEyebrow=[...card.querySelectorAll('.eyebrow')].find(el=>el.textContent.includes('$10 PARLAY'));
+  const parlayNote=parlayEyebrow?.nextElementSibling;
+  if(parlayNote?.matches('p.muted'))parlayNote.textContent='SAVE LEGS AS THEY SETTLE.';
+  const bettingOnly=[...card.querySelectorAll(':scope > p.muted')].find(p=>p.textContent.includes('Betting-only period'));
+  if(bettingOnly)bettingOnly.textContent='BETTING ONLY — NO SCORES OR DUES.';
+}
+
 function movePublicView(){
   header?.querySelector('a[href="../"]')?.classList.add('admin-header-public-hidden');
   if(!window.__fantasyAdmin?.isAuthenticated?.()||app.querySelector('.admin-public-footer'))return;
   app.insertAdjacentHTML('beforeend','<div class="admin-public-footer"><a class="button ghost" href="../">PUBLIC VIEW</a></div>');
 }
 
-function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();compactDues();movePublicView()}
+function apply(){compactStatus();compactActions();moveTestControls();compactSleeper();compactScoreHeader();compactDues();compactBetCopy();movePublicView()}
 window.addEventListener('fantasy-admin-rendered',apply);
 apply();
