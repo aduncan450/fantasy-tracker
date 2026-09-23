@@ -45,8 +45,21 @@ Routine regression coverage belongs in code, not repeated manual checklists.
 6. Tests must not write production Supabase data. Browser tests should mock external APIs unless the specific purpose is a read-only integration check.
 7. Keep both desktop Chromium and iPhone-sized browser coverage for core flows.
 8. When a manual QA session discovers a reproducible regression, add an automated regression test for it whenever practical before or with the fix.
+9. A QA job that hangs, times out, or is cancelled is a failed release signal, not a neutral result. Investigate it before declaring a frontend change complete.
 
 Manual testing remains appropriate for visual judgment, real-device ergonomics, and novel workflows not yet represented in the suite, but it should not be the primary way previously verified business behavior is rechecked.
+
+## Admin DOM observer safety
+
+The admin portal has twice been frozen by recursive `MutationObserver` behavior. The failure mode is important: a companion script observes DOM mutations, then writes to the same observed subtree on every callback; that write creates another mutation, causing an endless microtask loop. The page may render partially, but the browser event loop is starved and the portal becomes unusable. Playwright may hang instead of producing a normal assertion failure.
+
+1. Do not add a broad `MutationObserver` with `{subtree:true}` to an admin module that also mutates that observed subtree unless the writes are provably idempotent and guarded.
+2. Prefer observing only top-level `#app` child changes when the purpose is merely to detect a core admin rerender.
+3. Before assigning `textContent`, `innerHTML`, attributes, or replacing/inserting/removing nodes from observer-driven code, compare the desired state with the current state and skip no-op writes.
+4. Never use an unconditional DOM write inside a callback that can be retriggered by that same write.
+5. If a UI enhancement can be rendered directly in `admin.js` rather than repaired repeatedly after render, prefer the direct rendering path. Remove superseded post-render hacks when practical.
+6. Any regression involving a frozen/blank admin portal must get a short-timeout browser startup test that proves the event loop settles and the primary controls remain interactive.
+7. When CI starts taking dramatically longer after an admin DOM change, inspect for observer/microtask loops immediately instead of waiting for the workflow timeout.
 
 ## Admin mutation and dirty-state discipline
 
