@@ -18,14 +18,14 @@ Incomplete or live Sleeper scores never generate dues. A score value of zero is 
 ## 4. Pot accounting
 The pot is derived: starting pot + paid dues + bet payouts + explicit adjustments - recorded bet stakes. Unpaid dues are not cash. A bet payout is total cash returned, not profit.
 
-PrizePicks actual-wager differences are excluded from live pot accounting and are season-end informational tracking only until an explicit settlement decision is made.
+PrizePicks actual-wager differences are excluded from live pot accounting while they are being tracked. At season end, the commissioner can explicitly settle the accumulated difference into the pot as one positive Week 17 adjustment; only that settlement affects the pot and public ledger.
 
 ## 5. Weekly bets
 Each betting period can contain one $10 parlay and one $5 bet. The parlay has one leg per league player; each leg independently tracks pending, hit, miss, or push. Overall bet status supports placed, won, lost, push, and void.
 
 Bets are indexed by the week in which they are placed. Weeks 1–16 can contain bets alongside fantasy-week data. Week 17 is betting-only.
 
-The admin-only $5 bet stake adjustment records the actual PrizePicks amount wagered for each week with a $5 bet. Amount owed to the pot is `$5.00 - actual wager`, bounded from $0 to $5. It does not create ledger entries and is omitted from the public dashboard.
+The admin-only $5 bet stake adjustment records the actual PrizePicks amount wagered for each week with a $5 bet. Amount owed to the pot is `$5.00 - actual wager`, bounded from $0 to $5. Weekly tracking itself creates no ledger entries and is omitted from the public dashboard. On the Week 17 admin page, the season total can be settled once into the pot; this creates a traceable explicit adjustment labeled `Gambler paid $5 bet stake adjustments` and then participates in normal pot accounting.
 
 New bet entry is structured while preserving the existing canonical string fields. Parlay legs use an ESPN-backed active-player combo box filtered to QB, RB, TE, WR, FB, K, and P, plus a prop selector, over/under selector, and numeric line. The generated leg string remains compatible with existing backups and result detection. If an older saved leg cannot be parsed into the supported structured shape, the legacy free-text editor remains visible so historical data is not silently rewritten.
 
@@ -53,7 +53,7 @@ The admin has a completion-driven workflow week derived from league data and can
 
 For Weeks 1–16, matchup context and editable score inputs share one **Matchups & scores** card. Week 17 omits scores/matchups/Sleeper controls and retains betting/accounting controls only.
 
-The admin can edit scores, mark each derived due paid/unpaid, create/update bets through structured bet-entry controls, save individual parlay leg outcomes, preview supported NFL bet results, apply detected statuses locally for commissioner review, track PrizePicks actual wagers, edit Sleeper roster mapping, sync Sleeper scores, export/import backups, and save all changes. Admin-only PrizePicks tracking participates in the same main save lifecycle.
+The admin can edit scores, mark each derived due paid/unpaid, create/update bets through structured bet-entry controls, save individual parlay leg outcomes, preview supported NFL bet results, apply detected statuses locally for commissioner review, track PrizePicks actual wagers, edit Sleeper roster mapping, sync Sleeper scores, export/import backups, and save all changes. Admin-only PrizePicks tracking participates in the same main save lifecycle. On Week 17 only, the Adjustments card exposes the one-time season-end settlement from the gambler to the pot. The settlement is applied locally first and requires the normal main save action before it becomes canonical.
 
 Structured bet entry is a presentation/input layer only; it writes the same `pick` and `description` strings already used by the league schema. Active NFL player suggestions are loaded from ESPN team rosters in the admin browser and are not persisted. The roster list is advisory input assistance; final canonical values remain the generated bet strings inside league data.
 
@@ -96,6 +96,8 @@ For betting, commissioner-saved statuses always take precedence. Only parlay leg
 The betting section title is simply **BETS** in the established green heading treatment. The header itself has no dice icon and no week label. The $10 parlay uses a dice icon; the $5 bet uses a dart hitting a bullseye icon. Presentation-only betting lifecycle is: no badge before any bet exists, **PLACED** after entry, **LIVE** once outcomes begin resolving while at least one overall bet remains placed, and **FINAL** once commissioner-saved overall statuses are settled.
 
 Season payout shows the three split rows directly under **SEASON PAYOUT**. Do not show a redundant `Current pot split` subheading. The only explanatory note is `Projected from the current pot.`
+
+The Week 17 season-end gambler settlement is a normal explicit ledger adjustment after it is saved. It increases the displayed pot and appears in public **POT ACTIVITY** with its settlement label, preserving a traceable record of the one-time payment.
 
 ## 10. Presentation rules
 Names remain normal case. Most labels/headings use the established uppercase visual treatment. Mobile layouts must remain comfortable on an iPhone. Equal-information fields should have equal visible widths. Avoid arbitrary wrapping that makes paired values appear unrelated.
@@ -144,12 +146,12 @@ GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment 
 - Never rely on users clearing cache or hard-refreshing.
 
 ## 14. Source layout
-`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared base styling; `public.css` public-only branded dashboard styling; `admin.css` admin-only styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules and completion-driven admin `currentWeek()`; `js/dashboard-week.js` Thursday-midnight-Central public calendar-week logic; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata/live reads/score import; `js/bet-entry.js` structured bet string builders/parsers and ESPN roster normalization; `js/admin-bet-entry.js` ESPN-backed admin structured-entry UI; `js/bet-results.js` ESPN NFL result parsing/evaluation; `js/public.js` public rendering; `js/admin.js` core admin UI; `js/admin-qol.js` admin dirty-state/draft/closeout/selector enhancements; `js/bet-adjustments-admin.js` PrizePicks UI; `js/bet-results-admin.js` result preview/apply workflow; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows; `.github/workflows/qa.yml` CI.
+`index.html` public shell; `admin/index.html` admin shell; `styles.css` shared base styling; `public.css` public-only branded dashboard styling; `admin.css` admin-only styling; `js/config.js` config; `js/schema.js` initial data/normalization/validation; `js/calculations.js` business rules and completion-driven admin `currentWeek()`; `js/dashboard-week.js` Thursday-midnight-Central public calendar-week logic; `js/storage.js` Supabase/auth and TEST MODE persistence boundary; `js/sleeper.js` Sleeper metadata/live reads/score import; `js/bet-entry.js` structured bet string builders/parsers and ESPN roster normalization; `js/admin-bet-entry.js` ESPN-backed admin structured-entry UI; `js/bet-results.js` ESPN NFL result parsing/evaluation; `js/public.js` public rendering; `js/admin.js` core admin UI; `js/admin-qol.js` admin dirty-state/draft/closeout/selector enhancements; `js/bet-adjustments-admin.js` PrizePicks UI and Week 17 season-end settlement; `js/bet-results-admin.js` result preview/apply workflow; `tests/unit/` deterministic business-rule regressions; `tests/e2e/` Playwright browser workflows; `.github/workflows/qa.yml` CI.
 
 Business rules belong in calculation/schema/storage modules rather than UI rendering code. Public calendar presentation belongs in `dashboard-week.js` and must stay separate from admin completion logic.
 
 ## 15. Current implementation state
-Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, structured ESPN-backed parlay/$5 bet entry, moneyline/spread/game-total result evaluation, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, admin ESPN bet-result preview/apply, public read-only automatic unresolved bet outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, Thursday-based public dashboard week timing, public branded dashboard presentation, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, weekly closeout/attention markers, unsaved-change protection with sticky save, PrizePicks stake tracking, backward-compatible normalization/migration, isolated TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections remain intentionally removed.
+Core app is deployed. Supabase read/write/auth/session refresh, automatic dues, individual payment tracking, betting, structured ESPN-backed parlay/$5 bet entry, moneyline/spread/game-total result evaluation, playoff Weeks 15–16, final betting-only Week 17, per-leg parlay outcomes, admin ESPN bet-result preview/apply, public read-only automatic unresolved bet outcomes, automatic Sleeper metadata loading, public current-week live Sleeper scores, commissioner Sleeper score sync with live/final gating, Thursday-based public dashboard week timing, public branded dashboard presentation, season payout projection, backups, commissioner-save timestamp semantics, admin historical week navigation, weekly closeout/attention markers, unsaved-change protection with sticky save, PrizePicks stake tracking and Week 17 one-time settlement, backward-compatible normalization/migration, isolated TEST MODE, and automated unit/browser regression coverage exist. Sleeper projections remain intentionally removed.
 
 ## 16. Development workflow
 Work directly against `aduncan450/fantasy-tracker`, inspect current files before overwriting, make concrete commits, and report commit SHAs. Favor small understandable vanilla-JS changes. Use actual mobile screenshots as visual truth. Minimize human setup and assume the commissioner may be mobile-only.
@@ -171,8 +173,9 @@ Automated regression tests are the default repeatable QA layer. Run `npm test` w
 10. The 10% allocation is the current-season Playoff Betting Fund.
 11. Names remain normal case while most UI labels are uppercase.
 12. The application remains comfortable on a phone.
-13. PrizePicks actual-stake differences never affect live pot accounting.
+13. PrizePicks actual-stake differences never affect live pot accounting until the explicit one-time Week 17 settlement is recorded.
 14. Public live Sleeper data is display-only and never canonical accounting state.
 15. Frontend changes must invalidate changed browser-cached assets and transitive dependencies.
 16. Documentation must remain synchronized with implemented behavior.
 17. TEST MODE must never write league changes to production Supabase.
+18. The season-end gambler settlement is one explicit Week 17 ledger adjustment and must not be duplicated by the admin UI.
