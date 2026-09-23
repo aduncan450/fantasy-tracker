@@ -6,7 +6,6 @@ const replacements=[
   [/^Mark each weekly charge paid individually\./,'MARK DUES PAID BY WEEK.'],
   [/^Update individual leg results as they settle\./,'SETTLE LEGS AS RESULTS COME IN.'],
   [/^Run the real admin UI against isolated browser-only test data\./,'ISOLATED BROWSER DATA FOR QA.'],
-  [/^Betting-only period after the fantasy playoffs\./,'BETTING ONLY · NO FANTASY SCORES OR DUES.'],
   [/^← marks the workflow week,/,'← CURRENT · • NEEDS ATTENTION · ✓ CLEAR.'],
   [/^All earlier started weeks are clear\. This status is derived from tracker data and is never stored separately\.$/,'ALL EARLIER WEEKS CLEAR.'],
   [/^\d+ older weeks? needs? attention\. This status is derived from tracker data and is never stored separately\.$/,'OLDER WEEKS NEED ATTENTION.']
