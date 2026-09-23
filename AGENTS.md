@@ -46,6 +46,8 @@ Routine regression coverage belongs in code, not repeated manual checklists.
 7. Keep both desktop Chromium and iPhone-sized browser coverage for core flows.
 8. When a manual QA session discovers a reproducible regression, add an automated regression test for it whenever practical before or with the fix.
 9. A QA job that hangs, times out, or is cancelled is a failed release signal, not a neutral result. Investigate it before declaring a frontend change complete.
+10. Browser tests should target stable semantic contracts (element IDs, names, roles, or dedicated test attributes) instead of exact presentation copy when the wording itself is not the behavior under test. If visible wording changes intentionally, update copy assertions only where the wording is part of the requirement.
+11. When QA is red on `main`, perform diagnosis and repair on a branch/PR so intermediate commits do not trigger GitHub Pages deployments. Merge only after branch QA is green, then confirm both Automated QA and Pages deployment succeed for the exact same merge commit before declaring recovery complete.
 
 Manual testing remains appropriate for visual judgment, real-device ergonomics, and novel workflows not yet represented in the suite, but it should not be the primary way previously verified business behavior is rechecked.
 
