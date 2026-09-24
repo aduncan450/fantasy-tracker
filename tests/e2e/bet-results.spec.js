@@ -103,10 +103,16 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
 
   const savedAt=await page.evaluate(()=>JSON.parse(localStorage.getItem('bh_test_data')||'null')?.metadata?.lastUpdated||null);
   await page.locator('#save').click();
-  await page.waitForFunction(previous=>{
+  await expect.poll(async()=>page.evaluate(previous=>{
     const current=JSON.parse(localStorage.getItem('bh_test_data')||'null')?.metadata?.lastUpdated||null;
-    return Boolean(current)&&current!==previous;
-  },savedAt);
+    return {
+      persisted:Boolean(current)&&current!==previous,
+      testModeKey:localStorage.getItem('bh_test_mode'),
+      bodyTestMode:document.body.classList.contains('test-mode'),
+      message:document.querySelector('.card.success,.card.error')?.textContent?.trim()||null,
+      saveLabel:document.querySelector('#save')?.textContent?.trim()||null
+    };
+  },savedAt),{timeout:30000}).toMatchObject({persisted:true,testModeKey:'1',bodyTestMode:true});
   await page.reload();
   await page.getByLabel('Week to edit').selectOption('2');
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('hit');
