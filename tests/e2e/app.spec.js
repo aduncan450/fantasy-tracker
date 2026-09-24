@@ -61,7 +61,7 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   const saveNow=page.getByRole('button',{name:'Save now'});
   await expect(saveNow).toBeVisible();
   await saveNow.click();
-  await expect(page.getByText(/Saved to isolated TEST MODE storage/)).toBeVisible();
+  await expect(page.locator('.card.success,.card.error').first()).toContainText('Saved to isolated TEST MODE storage');
   await page.reload();
   await expect(page.getByLabel('Week to edit')).toHaveValue('2');
   await page.getByLabel('Week to edit').selectOption('1');
