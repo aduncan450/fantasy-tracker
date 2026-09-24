@@ -5,6 +5,7 @@ import {dashboardWeek} from './dashboard-week.js?v=20260923-wed-noon1';
 
 const app=document.querySelector('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+let rendered=false;
 
 function activityLabel(row){
   let label=String(row.label||'');
@@ -27,26 +28,35 @@ function potActivityCard(){
 }
 
 async function renderFullHistory(){
+  if(rendered)return true;
+  const card=potActivityCard(),history=card?.querySelector('.history');
+  if(!history)return false;
+
   try{
     const data=await loadLeague();
-    const card=potActivityCard(),history=card?.querySelector('.history');
-    if(!history)return;
-
     const current=dashboardWeek(data),recentWeeks=new Set([current,current-1].filter(week=>week>=1));
     const rows=ledger(data).slice().reverse();
     const recent=rows.filter(row=>row.season||recentWeeks.has(Number(row.week)));
     const older=rows.filter(row=>!row.season&&!recentWeeks.has(Number(row.week)));
 
     history.innerHTML=recent.map(rowHtml).join('')||'<p class="muted">No activity yet.</p>';
-    if(!older.length)return;
-
-    const details=document.createElement('details');
-    details.className='pot-history-more';
-    details.innerHTML=`<summary>Load more history</summary><div class="pot-history-older">${older.map(rowHtml).join('')}</div>`;
-    history.append(details);
+    if(older.length){
+      const details=document.createElement('details');
+      details.className='pot-history-more';
+      details.innerHTML=`<summary>Load more history</summary><div class="pot-history-older">${older.map(rowHtml).join('')}</div>`;
+      history.append(details);
+    }
+    rendered=true;
+    return true;
   }catch(error){
     console.warn('Full pot activity history unavailable; keeping the default recent activity.',error);
+    return true;
   }
 }
 
-renderFullHistory();
+if(!await renderFullHistory()){
+  const observer=new MutationObserver(async()=>{
+    if(await renderFullHistory())observer.disconnect();
+  });
+  observer.observe(app,{childList:true,subtree:true});
+}
