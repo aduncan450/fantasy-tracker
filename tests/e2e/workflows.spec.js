@@ -79,6 +79,10 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
   await expect(potValue).toHaveText(potBefore);
 
   await page.getByRole('button',{name:'Save test changes'}).click();
+  await page.waitForFunction(()=>{
+    const data=JSON.parse(localStorage.getItem('bh_test_data')||'null');
+    return data?.betPlacerActualBets?.['2']===460;
+  });
   await page.reload();
   await page.getByLabel('Week to edit').selectOption('2');
   await expect(page.locator('#weekly-bet-adjustments .actual-bet')).toHaveValue('4.60');
