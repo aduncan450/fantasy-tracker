@@ -1,4 +1,4 @@
-import {detectBetResults} from './bet-results.js?v=20260923-team-logos1';
+import {detectBetResults} from './bet-results.js?v=20260924-pot-activity1';
 
 let rendering=false,lastCheck=null,busy=false;
 const admin=()=>window.__fantasyAdmin;
