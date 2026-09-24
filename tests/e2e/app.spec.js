@@ -6,6 +6,7 @@ const SLEEPER='https://api.sleeper.app/v1';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const week=(d,n)=>d.weeks.find(w=>w.week===n);
 const scoreInput=(page,name)=>page.getByRole('spinbutton',{name,exact:true});
+const testModeState=page=>page.evaluate(()=>({flag:localStorage.getItem('bh_test_mode'),data:Boolean(localStorage.getItem('bh_test_data')),seed:Boolean(localStorage.getItem('bh_test_seed')),shared:window.__fantasyTestModeState?.active,body:document.body.classList.contains('test-mode')}));
 
 async function mockProduction(page,data){
   await page.route(`${SUPABASE}/rest/v1/leagues**`,async route=>{
@@ -51,6 +52,9 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await page.goto('/admin/');
   await startCleanTestMode(page);
   await expect(page.getByText('TEST MODE',{exact:true}).first()).toBeVisible();
+  await expect(testModeState(page)).resolves.toMatchObject({flag:'1',data:true,seed:true,shared:true,body:true});
+  // Safety regression: even if the lightweight marker is lost, the isolated seed/data snapshot must keep saves out of Supabase.
+  await page.evaluate(()=>localStorage.removeItem('bh_test_mode'));
   await scoreInput(page,'Duncan').fill('120');
   await scoreInput(page,'Matt').fill('110');
   await scoreInput(page,'Jacob').fill('100');
@@ -58,6 +62,7 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await page.getByRole('button',{name:'Apply scores'}).click();
   await expect(page.getByText(/Week 1 · Jacob · \$10\.00/)).toBeVisible();
   await expect(page.getByText(/Week 1 · Matt · \$5\.00/)).toBeVisible();
+  await expect(testModeState(page)).resolves.toMatchObject({flag:null,data:true,seed:true,shared:true,body:true});
   const saveNow=page.getByRole('button',{name:'Save now'});
   await expect(saveNow).toBeVisible();
   await saveNow.click();
