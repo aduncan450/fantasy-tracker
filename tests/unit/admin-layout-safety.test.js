@@ -39,7 +39,11 @@ test('sync label rewrite is guarded against no-op text mutations',()=>{
 test('TEST MODE launcher is hidden until live core controls are ready',()=>{
   assert.match(layout,/button\.hidden=true/);
   assert.match(layout,/trigger\.hidden=inTestMode\|\|!productionButton\|\|!cleanButton/);
-  assert.match(layout,/if\(!app\.querySelector\('#test-production'\)\|\|!app\.querySelector\('#test-clean'\)\)return/);
+});
+
+test('visible TEST MODE launcher opens its dialog without a second race-prone core-control check',()=>{
+  assert.match(layout,/button\.addEventListener\('click',\(\)=>\{\s*const dialog=ensureTestDialog\(\);\s*if\(!dialog\.open\)dialog\.showModal\(\);\s*\}\)/);
+  assert.doesNotMatch(layout,/if\(!app\.querySelector\('#test-production'\)\|\|!app\.querySelector\('#test-clean'\)\)return/);
 });
 
 test('TEST MODE dialog proxies stable core controls instead of moving them across DOM roots',()=>{
