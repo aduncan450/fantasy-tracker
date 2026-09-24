@@ -1,5 +1,5 @@
 const app=document.querySelector('#app');
-const RECOVERY_VERSION='20260923-compact-parlay1';
+const RECOVERY_VERSION='20260924-pot-activity2';
 const TEST_MODE_KEY='bh_test_mode',TEST_DATA_KEY='bh_test_data',TEST_SEED_KEY='bh_test_seed';
 const RECOVERED_KEY='bh_admin_recovered_test_mode';
 const ADMIN_RENDER_EVENT='fantasy-admin-rendered';
