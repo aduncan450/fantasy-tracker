@@ -95,7 +95,7 @@ test('completed matchup styling keeps winner and loser cues distinct with compac
   expect(alignment).toBe('flex-end');
 });
 
-test('public $5 card shows full matchup names with official ESPN team logo assets',async({page})=>{
+test('public $5 card shows split team names with official ESPN team logo assets',async({page})=>{
   const production=initialLeague();
   const week2=production.weeks.find(w=>w.week===2);
   week2.bets=[{stakeCents:500,status:'won',payoutCents:600,description:'Bills to Win vs Lions'}];
@@ -105,7 +105,11 @@ test('public $5 card shows full matchup names with official ESPN team logo asset
 
   const card=page.locator('.single-bet-card');
   await expect(card).toContainText('Buffalo Bills vs Detroit Lions');
-  await expect(card).toContainText('PICK: Buffalo Bills');
+  await expect(card.locator('.single-team-pick .single-team-location')).toHaveText('Buffalo');
+  await expect(card.locator('.single-team-pick .single-team-name')).toHaveText('Bills');
+  await expect(card.locator('.single-team-opponent .single-team-location')).toHaveText('Detroit');
+  await expect(card.locator('.single-team-opponent .single-team-name')).toHaveText('Lions');
+  await expect(card.locator('.single-venue')).toBeVisible();
   await expect(card.locator('.bet-title-copy small')).toHaveText('Moneyline');
   const logos=card.locator('.single-team-logo');
   await expect(logos).toHaveCount(2);
