@@ -3,7 +3,7 @@ import {money,pot,weekResult,ledger,playerStats,duesSummary} from './calculation
 import {liveSleeperWeek,sleeperState} from './sleeper.js?v=20260921-public-bet-results';
 import {detectBetResults} from './bet-results.js?v=20260923-compact-parlay1';
 import {compactPlayerPick} from './bet-entry.js?v=20260923-compact-parlay1';
-import {dashboardWeek} from './dashboard-week.js?v=20260921-public-redesign4';
+import {dashboardWeek} from './dashboard-week.js?v=20260923-wed-noon1';
 
 const app=document.querySelector('#app'),sync=document.querySelector('#sync'),seasonContext=document.querySelector('#season-context');
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
