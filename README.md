@@ -4,7 +4,7 @@
 
 ## Architecture
 
-- Public site: read-only branded league dashboard with calendar-based week display, live current-week Sleeper scores, section-local lifecycle statuses, and read-only automatic supported NFL bet outcomes when available
+- Public site: read-only branded league dashboard with calendar-based week display, live current-week Sleeper scores, section-local lifecycle statuses, full-name $5 matchup cards with ESPN-hosted NFL team logo assets, and read-only automatic supported NFL bet outcomes when available
 - `/admin`: commissioner-only data entry and maintenance, with derived weekly closeout/attention status and unsaved-change protection
 - Canonical production storage: Supabase (public read, authenticated admin write via RLS)
 - Admin TEST MODE: isolated disposable browser-local copy using the same league schema/business logic; never read by the public dashboard
@@ -19,8 +19,8 @@
 
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
-- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, compact canonical parlay-history normalization, supported NFL bet-result parsing/evaluation, and Wednesday-noon public dashboard week rollover.
-- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering, compact one-line parlay-leg rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
+- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, compact canonical parlay-history normalization, full-name matchup description generation/parsing, supported NFL bet-result parsing/evaluation, and Wednesday-noon public dashboard week rollover.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering, compact one-line parlay-leg rendering, $5 full-name matchup/logo rendering, mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
 - Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Wednesday-noon rollover boundary, including daylight-saving transitions.
@@ -30,7 +30,7 @@ The tests mock external writes and APIs; they do not modify the production Supab
 
 ## Public dashboard presentation and week timing
 
-The public dashboard uses a dedicated `public.css` layer so visual iteration does not restyle the commissioner portal. The header is intentionally restrained: **BUFF HUSKY FANTASY TRACKER** is uppercase with the green bar accent, followed by `2026–2027 SEASON | WEEK X` and the last commissioner update date/time on one evenly spaced line. Decorative mascot and mountain artwork are intentionally omitted.
+The public dashboard uses a dedicated `public.css` layer so visual iteration does not restyle the commissioner portal. The $5 matchup/logo treatment is isolated in `public-team-bets.css`. The header is intentionally restrained: **BUFF HUSKY FANTASY TRACKER** is uppercase with the green bar accent, followed by `2026–2027 SEASON | WEEK X` and the last commissioner update date/time on one evenly spaced line. Decorative mascot and mountain artwork are intentionally omitted.
 
 The top summary is one cohesive open panel with **Week** left-most, **Pot** as the other primary value, and **Collected/Unpaid** stacked as secondary values. It uses only the outer panel border rather than internal dividers. Matchup cards use a consistent stacked layout on desktop and mobile, without public implementation copy explaining how Sleeper refresh works.
 
@@ -42,6 +42,8 @@ Fantasy matchup lifecycle is shown beside the matchup data itself as **UPCOMING*
 
 Parlay player-prop strings use a compact canonical grammar: `pass yds`, `rush yds`, `rec yds`, `pass TD`, `rush TD`, `rec TD`, `anytime TD`, `INT`, and `receptions`. Legacy long-form strings remain readable and are normalized into the compact form when league data is loaded/saved/imported. Public rendering also abbreviates a full first name to an initial when possible so each parlay leg can stay on one line on an iPhone without changing the underlying player identity or bet meaning. Unsupported legacy free-text picks are preserved unchanged.
 
+Structured $5 team entries capture both the selected team and opponent and generate human-readable full-name descriptions such as `Buffalo Bills to beat Detroit Lions`. The public $5 card shows both full team names, the selected side (or total), and the actual ESPN-hosted team logo image for each side. Legacy supported descriptions such as `Bills to Win vs Lions` are still parsed into the same full-name/logo display when both teams can be identified. Logo URLs are presentation metadata only and are never stored in league data.
+
 The public dashboard section order is: pot/week summary, player cards, current matchups, current bets, season payout, recent matchups, then pot activity.
 
 ## Admin workflow safeguards
@@ -49,6 +51,8 @@ The public dashboard section order is: pot/week summary, player cards, current m
 The commissioner portal tracks when in-memory league data has changed but has not yet been persisted. After an Apply/import/sync/payment/direct-entry action mutates tracker data, **UNSAVED CHANGES** appears and a fixed **Save now** control stays available at the bottom of the page. Successful production or TEST MODE saves clear that state. Browser unloads and destructive actions such as sign-out warn before dirty data is discarded. Form text that still requires its existing **Apply** action is tracked separately: changing weeks warns before discarding that unapplied draft, while the sticky save only claims to save changes already applied to tracker data. The draft guard intercepts week navigation before the core change handler so dismissing the warning reliably preserves the selected week and draft values.
 
 The portal also includes a derived **Weekly closeout** card. It checks started/current weeks for score finality where applicable, regular-season dues payments, overall parlay status, individual parlay-leg completion, and the $5 bet. The week selector uses `← CURRENT` for the workflow week, `•` for unresolved started weeks, and `✓` for cleared started weeks. These indicators are UI-only and are never stored in league data.
+
+The structured $5 editor uses full NFL team names and requires both the selected team and opponent for moneyline, spread, and game-total entries. It still writes the existing canonical `description` string field, so no league-schema migration is required.
 
 ## Sleeper behavior
 
@@ -66,7 +70,7 @@ On the public page, a parlay leg still saved as **pending** may display a detect
 
 In admin, **Check Week N results** is read-only and shows the proposed status plus the underlying final-game evidence. It does not change tracker state. **Apply detected statuses locally** copies only settled supported statuses into the current admin form/data. The normal **Save all changes** action is still required before production Supabase changes, so pot/accounting behavior follows the same commissioner-submit boundary as the rest of the portal.
 
-The checker currently supports rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, interceptions, moneyline/team winner, against-the-spread, and game-total over/under wording. Compact canonical player-prop wording and legacy long-form wording are both accepted. Live games, unsupported descriptions, ambiguous player/team matches, and unavailable ESPN data are not guessed. Payout values and overall parlay status stay manual even when individual results are detected automatically.
+The checker currently supports rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, interceptions, moneyline/team winner, against-the-spread, and game-total over/under wording. Full-name matchup-aware team descriptions, legacy abbreviation-based team descriptions, compact canonical player-prop wording, and legacy long-form player wording are all accepted. Live games, unsupported descriptions, ambiguous player/team matches, and unavailable ESPN data are not guessed. Payout values and overall parlay status stay manual even when individual results are detected automatically.
 
 ## Admin TEST MODE
 
