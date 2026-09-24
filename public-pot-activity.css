@@ -1,8 +1,4 @@
 .public-dashboard .history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
 .public-dashboard .history-row>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .public-dashboard .history-row>b{white-space:nowrap}
-.public-dashboard .pot-history-more{border-top:1px solid var(--border);margin-top:0}
-.public-dashboard .pot-history-more summary{cursor:pointer;list-style:none;text-align:center;padding:18px 0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.public-dashboard .pot-history-more summary::-webkit-details-marker{display:none}
-.public-dashboard .pot-history-more[open] summary{border-bottom:1px solid var(--border)}
-.public-dashboard .pot-history-older .history-row:first-child{border-top:0}
+.public-dashboard .pot-history-load-more{display:block;width:100%;border:0;border-top:1px solid var(--border);background:transparent;color:var(--muted);padding:18px 0 2px;font:inherit;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:center;cursor:pointer}
