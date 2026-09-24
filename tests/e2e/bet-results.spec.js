@@ -7,7 +7,8 @@ const SLEEPER_API='https://api.sleeper.app/v1';
 const ESPN_API='https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 const PLAYERS=initialLeague().players;
 const clone=x=>JSON.parse(JSON.stringify(x));
-const expectTestMode=async(page,stage)=>expect(await page.evaluate(stage=>({stage,key:localStorage.getItem('bh_test_mode'),data:Boolean(localStorage.getItem('bh_test_data')),seed:Boolean(localStorage.getItem('bh_test_seed')),body:document.body.classList.contains('test-mode'),save:document.querySelector('#save')?.textContent?.trim()||null}),stage)).toEqual({stage,key:'1',data:true,seed:true,body:true,save:'Save test changes'});
+const testModeState=(page,stage)=>page.evaluate(stage=>({stage,key:localStorage.getItem('bh_test_mode'),data:Boolean(localStorage.getItem('bh_test_data')),seed:Boolean(localStorage.getItem('bh_test_seed')),body:document.body.classList.contains('test-mode'),save:document.querySelector('#save')?.textContent?.trim()||null}),stage);
+const expectTestMode=async(page,stage)=>expect.poll(()=>testModeState(page,stage),{timeout:5000}).toEqual({stage,key:'1',data:true,seed:true,body:true,save:'Save test changes'});
 
 async function mockProduction(page,data){
   await page.route(`${SUPABASE_URL}/rest/v1/leagues**`,async route=>{
