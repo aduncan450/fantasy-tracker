@@ -102,6 +102,13 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('input[name="single-payout"]')).toHaveValue('0');
 
   await page.getByRole('button',{name:'Save test changes'}).click();
+  await expect(page.getByText('Saved to isolated TEST MODE storage. Production was not changed.')).toBeVisible();
+  const saved=await page.evaluate(()=>{
+    const data=JSON.parse(localStorage.getItem('bh_test_data')||'null');
+    const week=data?.weeks?.find(w=>w.week===2);
+    return {leg:week?.bets?.find(b=>b.stakeCents===1000)?.legs?.find(l=>l.player==='Duncan')?.status,single:week?.bets?.find(b=>b.stakeCents===500)?.status};
+  });
+  expect(saved).toEqual({leg:'hit',single:'won'});
   await page.reload();
   await page.getByLabel('Week to edit').selectOption('2');
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('hit');
