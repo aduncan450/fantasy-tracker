@@ -28,7 +28,7 @@ test('admin bootstrap owns one top-level rerender observer and no subtree observ
 test('admin enhancement modules subscribe to the centralized render event',()=>{
   for(const name of ['admin-layout.js','admin-qol.js','admin-bet-entry.js','bet-adjustments-admin.js','bet-results-admin.js']){
     const source=read(`../../js/${name}`);
-    assert.match(source,/addEventListener\('fantasy-admin-rendered'/,`${name} must subscribe to the centralized render event`);
+    assert.match(source,/addEventListener\('fantasy-admin-rendered'/,`${name} must subscribe to the centralized admin render event`);
   }
 });
 
@@ -39,14 +39,24 @@ test('sync label rewrite is guarded against no-op text mutations',()=>{
 test('TEST MODE launcher is hidden until live core controls are ready',()=>{
   assert.match(layout,/button\.hidden=true/);
   assert.match(layout,/trigger\.hidden=inTestMode\|\|!productionButton\|\|!cleanButton/);
-  assert.match(layout,/if\(!app\.querySelector\('#test-production'\)\|\|!app\.querySelector\('#test-clean'\)\)return/);
+});
+
+test('visible TEST MODE launcher opens its dialog without a second race-prone core-control check',()=>{
+  assert.match(layout,/button\.addEventListener\('click',\(\)=>\{\s*const dialog=ensureTestDialog\(\);\s*if\(!dialog\.open\)dialog\.showModal\(\);\s*\}\)/);
+  assert.doesNotMatch(layout,/if\(!app\.querySelector\('#test-production'\)\|\|!app\.querySelector\('#test-clean'\)\)return/);
+});
+
+test('TEST MODE dialog keeps the latest wired core controls across transient admin rerenders',()=>{
+  assert.match(layout,/const testModeSources=new Map\(\)/);
+  assert.match(layout,/const source=app\.querySelector\(selector\)\|\|testModeSources\.get\(mode\)/);
+  assert.match(layout,/dialog\.close\(\);\s*source\?\.click\(\)/);
+  assert.match(layout,/testModeSources\.set\('production',productionButton\)/);
+  assert.match(layout,/testModeSources\.set\('clean',cleanButton\)/);
 });
 
 test('TEST MODE dialog proxies stable core controls instead of moving them across DOM roots',()=>{
   assert.match(layout,/id="test-production-dialog"/);
   assert.match(layout,/id="test-clean-dialog"/);
-  assert.match(layout,/const source=app\.querySelector\(mode==='production'\?'#test-production':'#test-clean'\)/);
-  assert.match(layout,/source\.click\(\)/);
   assert.match(layout,/card\.hidden=true/);
   assert.doesNotMatch(layout,/target\.append\(productionButton,cleanButton\)/);
   assert.doesNotMatch(layout,/target\.replaceChildren\(\)/);

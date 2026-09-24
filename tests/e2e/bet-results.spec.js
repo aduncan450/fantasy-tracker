@@ -39,10 +39,11 @@ async function fillLeg(page,owner,{player,prop='rushing yards',direction='over',
   await leg.locator('.bet-direction').selectOption(direction);
   await leg.locator('.bet-line').fill(String(line));
 }
-async function fillSingleMoneyline(page,team){
+async function fillSingleMoneyline(page,team,opponent='Detroit Lions'){
   const single=page.locator('.single-structured');
   await single.locator('.single-type').selectOption('moneyline');
   await single.locator('.single-team').fill(team);
+  await single.locator('.single-opponent').fill(opponent);
 }
 function event(id,name,teams){return {id,name,competitions:[{status:{type:{completed:true,description:'Final'}},competitors:teams.map(([displayName,name,abbreviation,score,winner])=>({score:String(score),winner,team:{displayName,name,abbreviation}}))}]}}
 function playerSummary(players){return {boxscore:{players:[{statistics:[{name:'rushing',keys:['rushingAttempts','rushingYards','yardsPerRushAttempt','rushingTouchdowns'],labels:['CAR','YDS','AVG','TD'],athletes:players.map(([id,displayName,yards,td])=>({athlete:{id,displayName},stats:['10',String(yards),'0',String(td)]}))}]}]}}}
@@ -76,7 +77,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await fillLeg(page,'Jacob',{player:'S. Barkley',line:94.5});
   await fillLeg(page,'Matt',{player:'D. Montgomery',prop:'anytime touchdowns',line:.5});
   await fillLeg(page,'Weston',{player:'J. Gibbs',prop:'anytime touchdowns',line:.5});
-  await fillSingleMoneyline(page,'Bills');
+  await fillSingleMoneyline(page,'Buffalo Bills');
 
   await page.getByRole('button',{name:'Check Week 2 results'}).click();
   await expect(page.getByText('Duncan · HIT')).toBeVisible();

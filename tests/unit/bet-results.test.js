@@ -8,13 +8,15 @@ const snapshot={season:2026,week:2,events:[
   {id:'3',name:'Buffalo Bills at Detroit Lions',completed:true,statusName:'Final',teams:[{aliases:['Buffalo Bills','Bills','BUF'],score:31,winner:true},{aliases:['Detroit Lions','Lions','DET'],score:27,winner:false}],players:[{aliases:['David Montgomery'],stats:{rushingTouchdowns:0,receivingTouchdowns:0}},{aliases:['Jahmyr Gibbs'],stats:{rushingTouchdowns:1,receivingTouchdowns:0}},{aliases:['Josh Allen'],stats:{interceptions:1}}]}
 ]};
 
-test('parses legacy and compact supported player props plus team bets',()=>{
+test('parses legacy and compact supported player props plus team picks',()=>{
   assert.deepEqual(parseBetPick('K. Walker III Over 78.5 Rushing Yards'),{supported:true,kind:'player-prop',raw:'K. Walker III Over 78.5 Rushing Yards',subject:'K. Walker III',direction:'over',line:78.5,stat:'rushingYards',statLabel:'rush yds'});
   assert.deepEqual(parseBetPick('K. Walker III over 78.5 rush yds'),{supported:true,kind:'player-prop',raw:'K. Walker III over 78.5 rush yds',subject:'K. Walker III',direction:'over',line:78.5,stat:'rushingYards',statLabel:'rush yds'});
   assert.equal(parseBetPick('D. Montgomery Over .5 Anytime TD').stat,'anytimeTouchdowns');
   assert.deepEqual(parseBetPick('J. Allen Over .5 INT'),{supported:true,kind:'player-prop',raw:'J. Allen Over .5 INT',subject:'J. Allen',direction:'over',line:0.5,stat:'interceptions',statLabel:'interceptions'});
   assert.deepEqual(parseBetPick('Bills to Win vs Lions'),{supported:true,kind:'team-win',raw:'Bills to Win vs Lions',team:'Bills',opponent:'Lions'});
+  assert.deepEqual(parseBetPick('Buffalo Bills to beat Detroit Lions'),{supported:true,kind:'team-win',raw:'Buffalo Bills to beat Detroit Lions',team:'Buffalo Bills',opponent:'Detroit Lions'});
   assert.deepEqual(parseBetPick('BUF -3.5 spread'),{supported:true,kind:'team-spread',raw:'BUF -3.5 spread',team:'BUF',line:-3.5});
+  assert.deepEqual(parseBetPick('Buffalo Bills -3.5 vs Detroit Lions'),{supported:true,kind:'team-spread',raw:'Buffalo Bills -3.5 vs Detroit Lions',team:'Buffalo Bills',opponent:'Detroit Lions',line:-3.5});
   assert.deepEqual(parseBetPick('BUF vs DET over 54.5 total'),{supported:true,kind:'team-total',raw:'BUF vs DET over 54.5 total',team:'BUF',opponent:'DET',direction:'over',line:54.5});
 });
 
@@ -33,7 +35,9 @@ test('evaluates current Week 2 examples from final box scores in legacy and comp
   assert.equal(evaluateBetPick(parseBetPick('J. Allen over 0.5 INT'),snapshot).status,'hit');
   assert.equal(evaluateBetPick(parseBetPick('J. Allen under 1.5 INT'),snapshot).status,'hit');
   assert.equal(evaluateBetPick(parseBetPick('Bills to Win vs Lions'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('Buffalo Bills to beat Detroit Lions'),snapshot).status,'won');
   assert.equal(evaluateBetPick(parseBetPick('BUF -3.5 spread'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('Buffalo Bills -3.5 vs Detroit Lions'),snapshot).status,'won');
   assert.equal(evaluateBetPick(parseBetPick('DET +3.5 spread'),snapshot).status,'lost');
   assert.equal(evaluateBetPick(parseBetPick('BUF vs DET over 54.5 total'),snapshot).status,'won');
   assert.equal(evaluateBetPick(parseBetPick('BUF vs DET under 58 total'),snapshot).status,'push');

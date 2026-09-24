@@ -58,8 +58,10 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await page.getByRole('button',{name:'Apply scores'}).click();
   await expect(page.getByText(/Week 1 · Jacob · \$10\.00/)).toBeVisible();
   await expect(page.getByText(/Week 1 · Matt · \$5\.00/)).toBeVisible();
-  await page.getByRole('button',{name:'Save test changes'}).click();
-  await expect(page.getByText(/Saved to isolated TEST MODE storage/)).toBeVisible();
+  const saveNow=page.getByRole('button',{name:'Save now'});
+  await expect(saveNow).toBeVisible();
+  await saveNow.click();
+  await expect(page.locator('.card.success,.card.error').first()).toContainText('Saved to isolated TEST MODE storage');
   await page.reload();
   await expect(page.getByLabel('Week to edit')).toHaveValue('2');
   await page.getByLabel('Week to edit').selectOption('1');

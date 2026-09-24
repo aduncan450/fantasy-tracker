@@ -94,3 +94,23 @@ test('completed matchup styling keeps winner and loser cues distinct with compac
   const alignment=await result.locator('.compact-dues').evaluate(el=>getComputedStyle(el).justifyContent);
   expect(alignment).toBe('flex-end');
 });
+
+test('public $5 card shows full matchup names with official ESPN team logo assets',async({page})=>{
+  const production=initialLeague();
+  const week2=production.weeks.find(w=>w.week===2);
+  week2.bets=[{stakeCents:500,status:'won',payoutCents:600,description:'Bills to Win vs Lions'}];
+  await mockProduction(page,production);
+  await freezeWeek2(page);
+  await page.goto('/');
+
+  const card=page.locator('.single-bet-card');
+  await expect(card).toContainText('Buffalo Bills vs Detroit Lions');
+  await expect(card).toContainText('PICK: Buffalo Bills');
+  await expect(card.locator('.bet-title-copy small')).toHaveText('Moneyline');
+  const logos=card.locator('.single-team-logo');
+  await expect(logos).toHaveCount(2);
+  await expect(logos.nth(0)).toHaveAttribute('src','https://a.espncdn.com/i/teamlogos/nfl/500/buf.png');
+  await expect(logos.nth(1)).toHaveAttribute('src','https://a.espncdn.com/i/teamlogos/nfl/500/det.png');
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});

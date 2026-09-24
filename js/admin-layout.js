@@ -1,12 +1,13 @@
 const app=document.querySelector('#app');
 const header=document.querySelector('.site-header');
 const sleeperNames=new Map();
+const testModeSources=new Map();
 
 function startTestMode(mode,dialog){
-  const source=app.querySelector(mode==='production'?'#test-production':'#test-clean');
-  if(!source)return;
+  const selector=mode==='production'?'#test-production':'#test-clean';
+  const source=app.querySelector(selector)||testModeSources.get(mode);
   dialog.close();
-  source.click();
+  source?.click();
 }
 
 function ensureTestDialog(){
@@ -35,7 +36,6 @@ function ensureHeaderTestButton(){
     button.textContent='TEST MODE';
     button.hidden=true;
     button.addEventListener('click',()=>{
-      if(!app.querySelector('#test-production')||!app.querySelector('#test-clean'))return;
       const dialog=ensureTestDialog();
       if(!dialog.open)dialog.showModal();
     });
@@ -50,6 +50,8 @@ function syncTestControls(){
   const cleanButton=app.querySelector('#test-clean');
   const inTestMode=document.body.classList.contains('test-mode');
   if(productionButton&&cleanButton){
+    testModeSources.set('production',productionButton);
+    testModeSources.set('clean',cleanButton);
     const card=productionButton.closest('.card');
     if(card){
       card.hidden=true;

@@ -54,10 +54,11 @@ async function fillLeg(page,owner,{player=owner,prop='rushing yards',direction='
   await leg.locator('.bet-direction').selectOption(direction);
   await leg.locator('.bet-line').fill(String(line));
 }
-async function fillSingleMoneyline(page,team='BUF'){
+async function fillSingleMoneyline(page,team='Buffalo Bills',opponent='Detroit Lions'){
   const single=page.locator('.single-structured');
   await single.locator('.single-type').selectOption('moneyline');
   await single.locator('.single-team').fill(team);
+  await single.locator('.single-opponent').fill(opponent);
 }
 
 test('PrizePicks actual wager persists without changing live pot accounting',async({page})=>{

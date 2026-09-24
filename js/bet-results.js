@@ -26,6 +26,8 @@ export function teamNameMatches(query,aliases=[]){const q=clean(query);if(!q)ret
 export function parseBetPick(text){const raw=String(text??'').trim();if(!raw)return {supported:false,raw,reason:'Empty bet description.'};
   const total=raw.match(/^(.+?)\s+(?:vs\.?|versus|at)\s+(.+?)\s+(over|under)\s+(\d*\.?\d+)\s+(?:total|game total)$/i);
   if(total)return {supported:true,kind:'team-total',raw,team:total[1].trim(),opponent:total[2].trim(),direction:total[3].toLowerCase(),line:Number(total[4])};
+  const matchupSpread=raw.match(/^(.+?)\s+([+-]?\d*\.?\d+)\s+(?:vs\.?|versus|at)\s+(.+)$/i);
+  if(matchupSpread)return {supported:true,kind:'team-spread',raw,team:matchupSpread[1].trim(),opponent:matchupSpread[3].trim(),line:Number(matchupSpread[2])};
   const spread=raw.match(/^(.+?)\s+([+-]?\d*\.?\d+)\s+(?:spread|ats)$/i);
   if(spread)return {supported:true,kind:'team-spread',raw,team:spread[1].trim(),line:Number(spread[2])};
   const player=raw.match(/^(.+?)\s+(over|under)\s+(-?\d*\.?\d+)\s+(.+)$/i);
@@ -45,6 +47,8 @@ export function parseBetPick(text){const raw=String(text??'').trim();if(!raw)ret
     if(!stat)return {supported:false,raw,reason:`Unsupported player prop: ${player[4].trim()}`};
     return {supported:true,kind:'player-prop',raw,subject,direction,line,stat,statLabel:label};
   }
+  const beat=raw.match(/^(.+?)\s+to\s+beat\s+(.+)$/i);
+  if(beat)return {supported:true,kind:'team-win',raw,team:beat[1].trim(),opponent:beat[2].trim()};
   const team=raw.match(/^(.+?)\s+(?:to\s+win|moneyline|ml)(?:\s+(?:vs\.?|versus|at)\s+(.+))?$/i);
   if(team)return {supported:true,kind:'team-win',raw,team:team[1].trim(),opponent:team[2]?.trim()||null};
   return {supported:false,raw,reason:'Description format is not supported yet.'};
