@@ -39,13 +39,20 @@ async function renderFullHistory(){
     const recent=rows.filter(row=>row.season||recentWeeks.has(Number(row.week)));
     const older=rows.filter(row=>!row.season&&!recentWeeks.has(Number(row.week)));
 
-    history.innerHTML=recent.map(rowHtml).join('')||'<p class="muted">No activity yet.</p>';
+    const recentHtml=recent.map(rowHtml).join('')||'<p class="muted">No activity yet.</p>';
+    history.innerHTML=recentHtml;
+
     if(older.length){
-      const details=document.createElement('details');
-      details.className='pot-history-more';
-      details.innerHTML=`<summary>Load more history</summary><div class="pot-history-older">${older.map(rowHtml).join('')}</div>`;
-      history.append(details);
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='pot-history-load-more';
+      button.textContent='Load more history';
+      button.addEventListener('click',()=>{
+        history.innerHTML=rows.map(rowHtml).join('')||'<p class="muted">No activity yet.</p>';
+      },{once:true});
+      history.append(button);
     }
+
     rendered=true;
     return true;
   }catch(error){
