@@ -101,7 +101,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('select[name="parlay-status"]')).toHaveValue('placed');
   await expect(page.locator('input[name="single-payout"]')).toHaveValue('0');
 
-  await page.getByRole('button',{name:'Save test changes'}).click();
+  await page.locator('#save').click();
   await page.waitForFunction(()=>{
     const data=JSON.parse(localStorage.getItem('bh_test_data')||'null');
     const week=data?.weeks?.find(w=>w.week===2);
