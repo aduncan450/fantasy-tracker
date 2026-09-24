@@ -7,7 +7,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 const readJson=key=>{try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}};
 const readSession=()=>readJson(SESSION_KEY);
 const storeSession=s=>{localStorage.setItem(SESSION_KEY,JSON.stringify(s));return s};
-export function isTestMode(){return localStorage.getItem(TEST_MODE_KEY)==='1'}
+export function isTestMode(){return localStorage.getItem(TEST_MODE_KEY)==='1'||(Boolean(localStorage.getItem(TEST_DATA_KEY))&&Boolean(localStorage.getItem(TEST_SEED_KEY)))}
 function prepareLeague(d){normalizeLeague(d);validateLeague(d);return d}
 function readTestData(key=TEST_DATA_KEY){const d=readJson(key);if(!d)throw new Error('Test data is missing. Exit test mode and start again.');return prepareLeague(d)}
 function writeTestData(key,data){prepareLeague(data);localStorage.setItem(key,JSON.stringify(data));return data}
