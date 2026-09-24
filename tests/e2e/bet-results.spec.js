@@ -43,7 +43,7 @@ async function fillSingleMoneyline(page,team,opponent='Detroit Lions'){
   const single=page.locator('.single-structured');
   await single.locator('.single-type').selectOption('moneyline');
   await single.locator('.single-team').fill(team);
-  await single.locator('.single-opponent').fill(opponent);
+  await expect(single.locator('.single-opponent')).toHaveValue(opponent);
 }
 function event(id,name,teams){return {id,name,competitions:[{status:{type:{completed:true,description:'Final'}},competitors:teams.map(([displayName,name,abbreviation,score,winner])=>({score:String(score),winner,team:{displayName,name,abbreviation}}))}]}}
 function playerSummary(players){return {boxscore:{players:[{statistics:[{name:'rushing',keys:['rushingAttempts','rushingYards','yardsPerRushAttempt','rushingTouchdowns'],labels:['CAR','YDS','AVG','TD'],athletes:players.map(([id,displayName,yards,td])=>({athlete:{id,displayName},stats:['10',String(yards),'0',String(td)]}))}]}]}}}
