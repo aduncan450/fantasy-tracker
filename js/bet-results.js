@@ -24,9 +24,13 @@ export function playerNameMatches(query,aliases=[]){const q=personParts(query);i
 export function teamNameMatches(query,aliases=[]){const q=clean(query);if(!q)return false;return aliases.some(alias=>{const a=clean(alias);return q===a||a.split(' ').includes(q)||(q.includes(' ')&&a.endsWith(q));});}
 
 export function parseBetPick(text){const raw=String(text??'').trim();if(!raw)return {supported:false,raw,reason:'Empty bet description.'};
-  const total=raw.match(/^(.+?)\s+(?:vs\.?|versus|at)\s+(.+?)\s+(over|under)\s+(\d*\.?\d+)\s+(?:total|game total)$/i);
+  const compactWin=raw.match(/^(.+?)\s+(?:vs\.?|versus|at|@)\s+(.+?)\s+ML$/i);
+  if(compactWin)return {supported:true,kind:'team-win',raw,team:compactWin[1].trim(),opponent:compactWin[2].trim()};
+  const compactSpread=raw.match(/^(.+?)\s+([+-]?\d*\.?\d+)\s+(?:vs\.?|versus|at|@)\s+(.+?)\s+ATS$/i);
+  if(compactSpread)return {supported:true,kind:'team-spread',raw,team:compactSpread[1].trim(),opponent:compactSpread[3].trim(),line:Number(compactSpread[2])};
+  const total=raw.match(/^(.+?)\s+(?:vs\.?|versus|at|@)\s+(.+?)\s+(over|under)\s+(\d*\.?\d+)\s+(?:total|game total)$/i);
   if(total)return {supported:true,kind:'team-total',raw,team:total[1].trim(),opponent:total[2].trim(),direction:total[3].toLowerCase(),line:Number(total[4])};
-  const matchupSpread=raw.match(/^(.+?)\s+([+-]?\d*\.?\d+)\s+(?:vs\.?|versus|at)\s+(.+)$/i);
+  const matchupSpread=raw.match(/^(.+?)\s+([+-]?\d*\.?\d+)\s+(?:vs\.?|versus|at|@)\s+(.+)$/i);
   if(matchupSpread)return {supported:true,kind:'team-spread',raw,team:matchupSpread[1].trim(),opponent:matchupSpread[3].trim(),line:Number(matchupSpread[2])};
   const spread=raw.match(/^(.+?)\s+([+-]?\d*\.?\d+)\s+(?:spread|ats)$/i);
   if(spread)return {supported:true,kind:'team-spread',raw,team:spread[1].trim(),line:Number(spread[2])};
@@ -49,7 +53,7 @@ export function parseBetPick(text){const raw=String(text??'').trim();if(!raw)ret
   }
   const beat=raw.match(/^(.+?)\s+to\s+beat\s+(.+)$/i);
   if(beat)return {supported:true,kind:'team-win',raw,team:beat[1].trim(),opponent:beat[2].trim()};
-  const team=raw.match(/^(.+?)\s+(?:to\s+win|moneyline|ml)(?:\s+(?:vs\.?|versus|at)\s+(.+))?$/i);
+  const team=raw.match(/^(.+?)\s+(?:to\s+win|moneyline|ml)(?:\s+(?:vs\.?|versus|at|@)\s+(.+))?$/i);
   if(team)return {supported:true,kind:'team-win',raw,team:team[1].trim(),opponent:team[2]?.trim()||null};
   return {supported:false,raw,reason:'Description format is not supported yet.'};
 }
