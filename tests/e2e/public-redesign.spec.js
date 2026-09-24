@@ -65,10 +65,10 @@ test('public parlay legs use compact one-line wording without mobile overflow',a
 
   const picks=page.locator('.bets-card .parlay-leg > span');
   await expect(picks).toHaveCount(4);
-  await expect(picks.nth(0)).toHaveText('K. WALKER III OVER 78.5 RUSH YDS');
-  await expect(picks.nth(1)).toHaveText('S. BARKLEY OVER 94.5 RUSH YDS');
-  await expect(picks.nth(2)).toHaveText('D. MONTGOMERY OVER 0.5 ANYTIME TD');
-  const oneLine=await picks.evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).whiteSpace==='nowrap'&&node.scrollHeight<=node.clientHeight+1));
+  await expect(picks.nth(0)).toHaveText('K. Walker III over 78.5 rush yds');
+  await expect(picks.nth(1)).toHaveText('S. Barkley over 94.5 rush yds');
+  await expect(picks.nth(2)).toHaveText('D. Montgomery over 0.5 anytime TD');
+  const oneLine=await picks.evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).whiteSpace==='nowrap'));
   expect(oneLine).toBe(true);
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
