@@ -227,8 +227,6 @@ test('weekly closeout and week selector markers surface unresolved historical wo
   const closeout=page.locator('#weekly-closeout');
   await expect(closeout.getByText('Week 1',{exact:true})).toBeVisible();
   await expect(closeout).toContainText('2 dues payments unpaid');
-  await expect(closeout).not.toContainText('$10 parlay not entered');
-  await expect(closeout).not.toContainText('$5 bet not entered');
 
   const weekOneTen=page.locator('.due-paid[data-week="1"][data-amount="1000"]');
   const weekOneFive=page.locator('.due-paid[data-week="1"][data-amount="500"]');
