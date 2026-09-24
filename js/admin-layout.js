@@ -35,7 +35,6 @@ function ensureHeaderTestButton(){
     button.textContent='TEST MODE';
     button.hidden=true;
     button.addEventListener('click',()=>{
-      if(!app.querySelector('#test-production')||!app.querySelector('#test-clean'))return;
       const dialog=ensureTestDialog();
       if(!dialog.open)dialog.showModal();
     });
