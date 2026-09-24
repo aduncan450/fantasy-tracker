@@ -1,0 +1,3 @@
+.public-dashboard .history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+.public-dashboard .history-row>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.public-dashboard .history-row>b{white-space:nowrap}
