@@ -1,7 +1,7 @@
 import {loadLeague} from './storage.js?v=20260923-compact-parlay1';
 import {money,pot,weekResult,ledger,playerStats,duesSummary} from './calculations.js?v=20260921-public-bet-results';
 import {liveSleeperWeek,sleeperState} from './sleeper.js?v=20260921-public-bet-results';
-import {detectBetResults} from './bet-results.js?v=20260923-team-logos1';
+import {detectBetResults} from './bet-results.js?v=20260924-pot-activity1';
 import {compactPlayerPick,parseSinglePick,findNflTeam,compactSingleActivity} from './bet-entry.js?v=20260924-pot-activity1';
 import {dashboardWeek} from './dashboard-week.js?v=20260923-wed-noon1';
 
