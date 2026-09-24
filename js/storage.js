@@ -1,4 +1,4 @@
-import {SUPABASE_URL,SUPABASE_ANON_KEY,LEAGUE_ID,isConfigured} from './config.js?v=20260920-week17';import {initialLeague,normalizeLeague,validateLeague} from './schema.js?v=20260923-team-logos1';
+import {SUPABASE_URL,SUPABASE_ANON_KEY,LEAGUE_ID,isConfigured} from './config.js?v=20260920-week17';import {initialLeague,normalizeLeague,validateLeague} from './schema.js?v=20260923-compact-parlay1';
 const headers=()=>({'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'});
 const ADMIN_URL='https://aduncan450.github.io/fantasy-tracker/admin/';
 const SESSION_KEY='bh_session',TEST_MODE_KEY='bh_test_mode',TEST_DATA_KEY='bh_test_data',TEST_SEED_KEY='bh_test_seed';
