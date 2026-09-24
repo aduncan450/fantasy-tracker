@@ -19,11 +19,11 @@
 
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
-- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, compact canonical parlay-history normalization, supported NFL bet-result parsing/evaluation, and Thursday-based public dashboard week rollover.
+- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, compact canonical parlay-history normalization, supported NFL bet-result parsing/evaluation, and Wednesday-noon public dashboard week rollover.
 - `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering, compact one-line parlay-leg rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
-- Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Thursday rollover boundary.
+- Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Wednesday-noon rollover boundary, including daylight-saving transitions.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
 
 The tests mock external writes and APIs; they do not modify the production Supabase league row. Manual TEST MODE QA remains useful for visual judgment and genuinely new workflows, but existing covered behavior should be protected by automated tests first.
@@ -36,7 +36,7 @@ The top summary is one cohesive open panel with **Week** left-most, **Pot** as t
 
 Finalized winners receive a restrained green gradient and trophy icon; the unique lowest scorer keeps muted red treatment and the other matchup loser keeps muted orange. **RECENT MATCHUPS** cards span the section width and compact `Name · Amount` dues chips are right-aligned.
 
-The public dashboard week is intentionally different from the admin workflow week. For the 2026 season, Week 1 begins Thursday, September 10. The public page advances every Thursday at **12:00 AM America/Chicago**, so finalizing a matchup on Monday does not make the public dashboard jump ahead early. Admin remains completion-driven for commissioner workflow/closeout purposes.
+The public dashboard week is intentionally different from the admin workflow week. For the 2026 season, Week 1 begins Thursday, September 10. The public page advances every Wednesday at **12:00 PM America/Chicago**, beginning with the Week 1 → Week 2 rollover on September 16. Finalizing a matchup on Monday still does not make the public dashboard jump ahead early; it remains on the just-played week until Wednesday noon. Admin remains completion-driven for commissioner workflow/closeout purposes.
 
 Fantasy matchup lifecycle is shown beside the matchup data itself as **UPCOMING**, **LIVE · SLEEPER**, or **FINAL** rather than as a global page status. The betting section uses no header icon or week label; the $10 parlay uses dice and the $5 bet uses a dart hitting a bullseye. Betting display lifecycle is no badge before entry, then **PLACED**, **LIVE** once outcomes begin resolving, and **FINAL** after commissioner-saved bet statuses are settled. These display labels are derived UI only and do not change canonical bet statuses.
 
