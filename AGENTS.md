@@ -49,6 +49,20 @@ Routine regression coverage belongs in code, not repeated manual checklists.
 10. Browser tests should target stable semantic contracts (element IDs, names, roles, or dedicated test attributes) instead of exact presentation copy when the wording itself is not the behavior under test. If visible wording changes intentionally, update copy assertions only where the wording is part of the requirement.
 11. When QA is red on `main`, perform diagnosis and repair on a branch/PR so intermediate commits do not trigger GitHub Pages deployments. Merge only after branch QA is green, then confirm both Automated QA and Pages deployment succeed for the exact same merge commit before declaring recovery complete.
 
+### QA diagnosis discipline
+
+When automated QA is red, diagnose from evidence before changing architecture.
+
+1. Read the exact failing assertion, Playwright call log/stack trace, and available trace or artifact before editing code.
+2. Classify the failure first: product defect, stale assertion, test synchronization/timing issue, or infrastructure/tooling failure.
+3. Change one evidence-backed thing per iteration whenever practical. Prefer the smallest product or test fix that directly addresses the observed failure, then rerun the normal QA workflow before introducing another layer of change.
+4. If a test passes alone but fails in the normal combined suite, check synchronization, shared state/server behavior, and parallel execution before concluding the application architecture needs redesign.
+5. Playwright helpers must explicitly wait for the intended UI state when an interaction depends on a dialog, rerender, or newly visible control. Do not rely on an element merely existing in the DOM when visibility/readiness is the actual prerequisite.
+6. Temporary CI instrumentation (for example, splitting specs into diagnostic jobs) is acceptable only when ordinary logs cannot isolate the failure. Revert it immediately after it answers the specific diagnostic question and before merge.
+7. For a suspected timing/race fix, one repeat successful run of the normal workflow is a reasonable bounded confidence check before merge. Do not keep redesigning solely to eliminate every theoretical race once the observed failure is addressed and regression coverage is green.
+8. Preserve the exact-same-commit release check: after merge, Automated QA and GitHub Pages must both succeed on the merge SHA before recovery is complete.
+9. See `docs/QA-INCIDENT-2026-09-23.md` for the incident that established these rules.
+
 Manual testing remains appropriate for visual judgment, real-device ergonomics, and novel workflows not yet represented in the suite, but it should not be the primary way previously verified business behavior is rechecked.
 
 ## Admin DOM rerender safety
