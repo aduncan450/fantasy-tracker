@@ -101,18 +101,23 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('select[name="parlay-status"]')).toHaveValue('placed');
   await expect(page.locator('input[name="single-payout"]')).toHaveValue('0');
 
+  const dialogs=[];
+  page.on('dialog',async dialog=>{dialogs.push(dialog.message());await dialog.dismiss()});
   const savedAt=await page.evaluate(()=>JSON.parse(localStorage.getItem('bh_test_data')||'null')?.metadata?.lastUpdated||null);
   await page.locator('#save').click();
-  await expect.poll(async()=>page.evaluate(previous=>{
+  await page.waitForTimeout(250);
+  const state=await page.evaluate(previous=>{
     const current=JSON.parse(localStorage.getItem('bh_test_data')||'null')?.metadata?.lastUpdated||null;
     return {
       persisted:Boolean(current)&&current!==previous,
       testModeKey:localStorage.getItem('bh_test_mode'),
       bodyTestMode:document.body.classList.contains('test-mode'),
       message:document.querySelector('.card.success,.card.error')?.textContent?.trim()||null,
-      saveLabel:document.querySelector('#save')?.textContent?.trim()||null
+      saveLabel:document.querySelector('#save')?.textContent?.trim()||null,
+      saveDisabled:Boolean(document.querySelector('#save')?.disabled)
     };
-  },savedAt),{timeout:30000}).toMatchObject({persisted:true,testModeKey:'1',bodyTestMode:true});
+  },savedAt);
+  expect({state,dialogs}).toEqual({state:{persisted:true,testModeKey:'1',bodyTestMode:true,message:'Saved to isolated TEST MODE storage. Production was not changed.',saveLabel:'Save test changes',saveDisabled:false},dialogs:[]});
   await page.reload();
   await page.getByLabel('Week to edit').selectOption('2');
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('hit');
