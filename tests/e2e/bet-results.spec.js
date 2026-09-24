@@ -102,6 +102,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('input[name="single-payout"]')).toHaveValue('0');
 
   await page.getByRole('button',{name:'Save test changes'}).click();
+  await expect(page.getByText('Saved to isolated TEST MODE storage. Production was not changed.')).toBeVisible();
   await page.reload();
   await page.getByLabel('Week to edit').selectOption('2');
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('hit');
