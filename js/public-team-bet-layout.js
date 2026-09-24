@@ -33,6 +33,8 @@ async function enhanceCard(card){
   if(!team||!opponent)return;
   card.dataset.matchupLayout='1';
   matchup.innerHTML=`<img class="single-team-logo" src="${esc(team.logoUrl)}" alt="" aria-hidden="true" loading="lazy"><div class="single-team-copy single-team-pick">${teamParts(team)}</div><span class="single-venue" aria-label="matchup venue">·</span><div class="single-team-copy single-team-opponent">${teamParts(opponent)}</div><img class="single-team-logo" src="${esc(opponent.logoUrl)}" alt="" aria-hidden="true" loading="lazy">`;
+  const outcome=card.querySelector('.bet-outcome')?.textContent?.trim().toLowerCase();
+  if(!['placed','live'].includes(outcome))return;
   const games=await schedule();
   const venue=venueFor(team,opponent,games),marker=matchup.querySelector('.single-venue');
   if(marker)marker.textContent=venue;
