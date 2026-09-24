@@ -1,6 +1,6 @@
-import {loadAdminLeague,saveAdminLeague,signIn,captureSessionFromHash,signOut,isTestMode,enterTestMode,resetTestMode,exitTestMode} from './storage.js?v=20260920-live-sleeper';
+import {loadAdminLeague,saveAdminLeague,signIn,captureSessionFromHash,signOut,isTestMode,enterTestMode,resetTestMode,exitTestMode} from './storage.js?v=20260923-compact-parlay1';
 import {money,pot,currentWeek,weekResult,duesRows} from './calculations.js?v=20260920-live-sleeper';
-import {normalizeLeague,validateLeague} from './schema.js?v=20260920-live-sleeper';
+import {normalizeLeague,validateLeague} from './schema.js?v=20260923-compact-parlay1';
 import {SLEEPER_LEAGUE_ID,sleeperTeams,syncSleeperScores} from './sleeper.js?v=20260920-live-sleeper';
 const app=document.querySelector('#app');let data=await loadAdminLeague(),auth=await captureSessionFromHash(),sleeper=null,selectedWeek=null;
 window.__fantasyAdmin={getData:()=>data,isAuthenticated:()=>Boolean(auth)};
