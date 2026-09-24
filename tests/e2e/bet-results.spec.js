@@ -7,6 +7,7 @@ const SLEEPER_API='https://api.sleeper.app/v1';
 const ESPN_API='https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 const PLAYERS=initialLeague().players;
 const clone=x=>JSON.parse(JSON.stringify(x));
+const expectTestMode=async(page,stage)=>expect(await page.evaluate(stage=>({stage,key:localStorage.getItem('bh_test_mode'),data:Boolean(localStorage.getItem('bh_test_data')),seed:Boolean(localStorage.getItem('bh_test_seed')),body:document.body.classList.contains('test-mode'),save:document.querySelector('#save')?.textContent?.trim()||null}),stage)).toEqual({stage,key:'1',data:true,seed:true,body:true,save:'Save test changes'});
 
 async function mockProduction(page,data){
   await page.route(`${SUPABASE_URL}/rest/v1/leagues**`,async route=>{
@@ -74,13 +75,16 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await page.goto('/admin/');
   await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
   await page.getByRole('button',{name:'Test clean league'}).click();
+  await expectTestMode(page,'entered');
   await page.getByLabel('Week to edit').selectOption('2');
+  await expectTestMode(page,'week-selected');
 
   await fillLeg(page,'Duncan',{player:'K. Walker III',line:78.5});
   await fillLeg(page,'Jacob',{player:'S. Barkley',line:94.5});
   await fillLeg(page,'Matt',{player:'D. Montgomery',prop:'anytime touchdowns',line:.5});
   await fillLeg(page,'Weston',{player:'J. Gibbs',prop:'anytime touchdowns',line:.5});
   await fillSingleMoneyline(page,'Buffalo Bills');
+  await expectTestMode(page,'forms-filled');
 
   await page.getByRole('button',{name:'Check Week 2 results'}).click();
   await expect(page.getByText('Duncan · HIT')).toBeVisible();
@@ -90,6 +94,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.getByText('$5 bet · WON')).toBeVisible();
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('pending');
   await expect(page.locator('select[name="single-status"]')).toHaveValue('placed');
+  await expectTestMode(page,'results-checked');
 
   await page.locator('#apply-bet-results').click();
   await expect(page.getByText('Bets applied locally. Save when ready.')).toBeVisible();
@@ -100,6 +105,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('select[name="single-status"]')).toHaveValue('won');
   await expect(page.locator('select[name="parlay-status"]')).toHaveValue('placed');
   await expect(page.locator('input[name="single-payout"]')).toHaveValue('0');
+  await expectTestMode(page,'results-applied');
 
   const dialogs=[];
   page.on('dialog',async dialog=>{dialogs.push(dialog.message());await dialog.dismiss()});
@@ -108,14 +114,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await page.waitForTimeout(250);
   const state=await page.evaluate(previous=>{
     const current=JSON.parse(localStorage.getItem('bh_test_data')||'null')?.metadata?.lastUpdated||null;
-    return {
-      persisted:Boolean(current)&&current!==previous,
-      testModeKey:localStorage.getItem('bh_test_mode'),
-      bodyTestMode:document.body.classList.contains('test-mode'),
-      message:document.querySelector('.card.success,.card.error')?.textContent?.trim()||null,
-      saveLabel:document.querySelector('#save')?.textContent?.trim()||null,
-      saveDisabled:Boolean(document.querySelector('#save')?.disabled)
-    };
+    return {persisted:Boolean(current)&&current!==previous,testModeKey:localStorage.getItem('bh_test_mode'),bodyTestMode:document.body.classList.contains('test-mode'),message:document.querySelector('.card.success,.card.error')?.textContent?.trim()||null,saveLabel:document.querySelector('#save')?.textContent?.trim()||null,saveDisabled:Boolean(document.querySelector('#save')?.disabled)};
   },savedAt);
   expect({state,dialogs}).toEqual({state:{persisted:true,testModeKey:'1',bodyTestMode:true,message:'Saved to isolated TEST MODE storage. Production was not changed.',saveLabel:'Save test changes',saveDisabled:false},dialogs:[]});
   await page.reload();
