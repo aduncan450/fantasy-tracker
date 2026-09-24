@@ -33,8 +33,10 @@ async function fillOpponent(input){
   if(!otherTeam)return;
   wrap.dataset.venue=mine.homeAway==='away'?'@':'vs';
   const next=teamFullName(otherTeam.full);
-  if(opponent.value!==next)opponent.value=next;
-  opponent.dispatchEvent(new Event('input',{bubbles:true}));
+  if(opponent.value!==next){
+    opponent.value=next;
+    opponent.dispatchEvent(new Event('input',{bubbles:true}));
+  }
   closeOpponentSuggestions(opponent);
 }
 function enhance(){
