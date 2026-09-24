@@ -7,13 +7,17 @@ function seasonStartYear(data){
   return match?Number(match[1]):null;
 }
 
-function centralDateParts(now){
-  const parts=new Intl.DateTimeFormat('en-US',{timeZone:CENTRAL_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+function centralDateTimeParts(now){
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone:CENTRAL_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now);
   return Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,Number(p.value)]));
 }
 
 function ordinal({year,month,day}){
   return Math.floor(Date.UTC(year,month-1,day)/DAY_MS);
+}
+
+function localDayValue(parts){
+  return ordinal(parts)+(parts.hour*3600+parts.minute*60+parts.second)/86400;
 }
 
 function weekOneThursday(year){
@@ -25,7 +29,8 @@ function weekOneThursday(year){
 export function dashboardWeek(data,now=new Date()){
   const year=seasonStartYear(data);
   if(!year)return 1;
-  const elapsedDays=ordinal(centralDateParts(now))-ordinal(weekOneThursday(year));
+  const firstRollover=ordinal(weekOneThursday(year))+6.5;
+  const elapsedDays=localDayValue(centralDateTimeParts(now))-firstRollover;
   if(elapsedDays<0)return 1;
-  return Math.min(17,Math.floor(elapsedDays/7)+1);
+  return Math.min(17,Math.floor(elapsedDays/7)+2);
 }
