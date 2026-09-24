@@ -149,5 +149,6 @@ app.addEventListener('click',e=>{
   if(target.matches('#test-production,#test-clean')&&!discardGuard('Discard unsaved or unapplied changes and start TEST MODE?')){e.preventDefault();e.stopImmediatePropagation();return}
 },true);
 
+window.addEventListener('fantasy-admin-form-applied',()=>{clearDraft();markDirty()});
 window.addEventListener('fantasy-admin-rendered',reconcileAfterRender);
 reconcileAfterRender();
