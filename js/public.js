@@ -1,8 +1,8 @@
 import {loadLeague} from './storage.js?v=20260923-compact-parlay1';
 import {money,pot,weekResult,ledger,playerStats,duesSummary} from './calculations.js?v=20260921-public-bet-results';
 import {liveSleeperWeek,sleeperState} from './sleeper.js?v=20260921-public-bet-results';
-import {detectBetResults} from './bet-results.js?v=20260923-team-logos1';
-import {compactPlayerPick,parseSinglePick,findNflTeam} from './bet-entry.js?v=20260923-team-logos1';
+import {detectBetResults} from './bet-results.js?v=20260924-pot-activity1';
+import {compactPlayerPick,parseSinglePick,findNflTeam,compactSingleActivity} from './bet-entry.js?v=20260924-pot-activity1';
 import {dashboardWeek} from './dashboard-week.js?v=20260923-wed-noon1';
 
 const app=document.querySelector('#app'),sync=document.querySelector('#sync'),seasonContext=document.querySelector('#season-context');
@@ -30,7 +30,7 @@ function renderBets(w,detected=null){const bets=w?.bets||[];if(!bets.length)retu
 function seasonYear(d){const text=`${d.season?.label||''} ${d.id||''}`;const match=text.match(/\b(20\d{2})\b/);return match?Number(match[1]):null;}
 async function publicBetResults(d,w){if(!w?.bets?.length)return null;const parlay=w.bets.find(b=>b.legs?.length),single=w.bets.find(b=>!b.legs?.length&&Number(b.stakeCents)===500);const unresolvedLegs=(parlay?.legs||[]).filter(l=>(l.status||'pending')==='pending'),singleDescription=single?.status==='placed'?single.description:'';if(!unresolvedLegs.length&&!singleDescription)return null;const season=seasonYear(d);if(!season)return null;try{return await detectBetResults({season,week:w.week,parlayLegs:unresolvedLegs,singleDescription});}catch(error){console.warn('Automatic public bet results unavailable; using saved tracker statuses.',error);return null;}}
 function matchupLifecycle(w,live){if(live)return 'LIVE · SLEEPER';return weekResult(w).complete?'FINAL':'UPCOMING';}
-function activityLabel(row){let label=String(row.label||'');if(row.kind==='dues-payment')return label.replace(' paid — lowest score this week',' — lowest score').replace(' paid — lost the other matchup',' — lost');if(row.kind==='stake'||row.kind==='payout'){label=label.replace(/ payout$/i,'');if(label.toLowerCase()==='$10 parlay')return 'Parlay';}return label;}
+function activityLabel(row){let label=String(row.label||'');if(row.kind==='dues-payment')return label.replace(' paid — lowest score this week',' — lowest score').replace(' paid — lost the other matchup',' — lost');if(row.kind==='stake'||row.kind==='payout'){label=label.replace(/ payout$/i,'');if(label.toLowerCase()==='$10 parlay')return 'Parlay';const compact=compactSingleActivity(label);if(compact!==label)return compact;}return label;}
 function render(d,live=null,detected=null){
   const n=dashboardWeek(d),displayWeek=live||d.weeks.find(x=>x.week===n),betWeek=d.weeks.find(x=>x.week===n)||null,rows=ledger(d),stats=playerStats(d),summary=duesSummary(d),balance=pot(d),winner=Math.round(balance*.30),each=Math.round(balance*.20),playoffBankroll=balance-winner-(each*3),averages=averageScores(d),recent=d.weeks.filter(w=>w.type==='regular'&&w.week<n&&weekResult(w).complete).sort((a,b)=>b.week-a.week).slice(0,2);
   if(seasonContext)seasonContext.textContent=`${d.season?.label||'2026–2027'} SEASON | WEEK ${n}`;

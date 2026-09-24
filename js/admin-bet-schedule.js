@@ -1,4 +1,4 @@
-import {findNflTeam,teamFullName} from './bet-entry.js?v=20260924-bet-matchup2';
+import {findNflTeam,teamFullName} from './bet-entry.js?v=20260924-pot-activity1';
 
 const BASE='https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 const cache=new Map();
@@ -26,15 +26,16 @@ async function fillOpponent(input){
   opponent.readOnly=true;
   opponent.setAttribute('aria-readonly','true');
   opponent.placeholder='Autofills from NFL schedule';
-  if(!pick){opponent.value='';closeOpponentSuggestions(opponent);return}
+  if(!pick){opponent.value='';delete wrap.dataset.venue;closeOpponentSuggestions(opponent);return}
   const rows=await schedule(),mine=rows.find(row=>row.abbr===pick.abbr);
   if(!mine)return;
   const competition=mine.event?.competitions?.[0],other=competition?.competitors?.find(c=>teamAbbr(c.team)!==pick.abbr),otherTeam=findNflTeam(teamAbbr(other?.team));
   if(!otherTeam)return;
-  const next=teamFullName(otherTeam.full);
-  if(opponent.value!==next){opponent.value=next;opponent.dispatchEvent(new Event('input',{bubbles:true}))}
-  closeOpponentSuggestions(opponent);
   wrap.dataset.venue=mine.homeAway==='away'?'@':'vs';
+  const next=teamFullName(otherTeam.full);
+  if(opponent.value!==next)opponent.value=next;
+  opponent.dispatchEvent(new Event('input',{bubbles:true}));
+  closeOpponentSuggestions(opponent);
 }
 function enhance(){
   const week=selectedWeek(),form=document.querySelector('#bets');

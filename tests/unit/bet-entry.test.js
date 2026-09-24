@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PLAYER_PROPS,buildPlayerPick,parsePlayerPick,canonicalizePlayerPick,compactPlayerPick,buildSinglePick,parseSinglePick,findNflTeam,normalizeEspnRoster} from '../../js/bet-entry.js';
+import {PLAYER_PROPS,buildPlayerPick,parsePlayerPick,canonicalizePlayerPick,compactPlayerPick,buildSinglePick,parseSinglePick,compactSingleActivity,findNflTeam,normalizeEspnRoster} from '../../js/bet-entry.js';
 
 test('builds compact canonical player props while accepting legacy wording',()=>{
   const pick=buildPlayerPick({player:'Josh Allen',prop:'passing yards',direction:'over',line:'274.5'});
@@ -18,15 +18,21 @@ test('builds compact canonical player props while accepting legacy wording',()=>
   assert.equal(compactPlayerPick('Jaxon Smith-Njigba over 0.5 anytime touchdowns'),'J. Smith-Njigba over 0.5 anytime TD');
 });
 
-test('builds full-name matchup descriptions and keeps legacy parsing compatible',()=>{
-  assert.equal(buildSinglePick({type:'moneyline',team:'BUF',opponent:'DET'}),'Buffalo Bills to beat Detroit Lions');
+test('builds venue-aware team bets and keeps legacy parsing compatible',()=>{
+  assert.equal(buildSinglePick({type:'moneyline',team:'BUF',opponent:'DET',venue:'@'}),'Buffalo Bills @ Detroit Lions ML');
+  assert.equal(buildSinglePick({type:'moneyline',team:'BUF',opponent:'DET',venue:'vs'}),'Buffalo Bills vs Detroit Lions ML');
   assert.equal(buildSinglePick({type:'moneyline',team:'BUF'}),'');
-  assert.equal(buildSinglePick({type:'spread',team:'BUF',opponent:'DET',line:'-3.5'}),'Buffalo Bills -3.5 vs Detroit Lions');
-  assert.equal(buildSinglePick({type:'total',team:'BUF',opponent:'DET',direction:'over',line:'54.5'}),'Buffalo Bills vs Detroit Lions over 54.5 total');
-  assert.deepEqual(parseSinglePick('Buffalo Bills to beat Detroit Lions'),{type:'moneyline',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'',line:''});
-  assert.deepEqual(parseSinglePick('Bills to Win vs Lions'),{type:'moneyline',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'',line:''});
-  assert.deepEqual(parseSinglePick('Buffalo Bills -3.5 vs Detroit Lions'),{type:'spread',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'',line:-3.5});
-  assert.deepEqual(parseSinglePick('BUF vs DET over 54.5 total'),{type:'total',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'over',line:54.5});
+  assert.equal(buildSinglePick({type:'spread',team:'BUF',opponent:'DET',line:'-3.5',venue:'@'}),'Buffalo Bills -3.5 @ Detroit Lions ATS');
+  assert.equal(buildSinglePick({type:'total',team:'BUF',opponent:'DET',direction:'over',line:'54.5',venue:'@'}),'Buffalo Bills @ Detroit Lions over 54.5 total');
+  assert.equal(buildSinglePick({type:'total',team:'BUF',opponent:'DET',direction:'under',line:'51.5',venue:'vs'}),'Detroit Lions @ Buffalo Bills under 51.5 total');
+  assert.deepEqual(parseSinglePick('Buffalo Bills @ Detroit Lions ML'),{type:'moneyline',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'',line:'',venue:'@'});
+  assert.deepEqual(parseSinglePick('Bills to Win vs Lions'),{type:'moneyline',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'',line:'',venue:'vs'});
+  assert.deepEqual(parseSinglePick('Buffalo Bills -3.5 @ Detroit Lions ATS'),{type:'spread',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'',line:-3.5,venue:'@'});
+  assert.deepEqual(parseSinglePick('BUF @ DET over 54.5 total'),{type:'total',team:'Buffalo Bills',opponent:'Detroit Lions',direction:'over',line:54.5,venue:'@'});
+  assert.equal(compactSingleActivity('Buffalo Bills @ Detroit Lions ML'),'Bills @ Lions ML');
+  assert.equal(compactSingleActivity('Buffalo Bills -3.5 @ Detroit Lions ATS'),'Bills -3.5 @ Lions ATS');
+  assert.equal(compactSingleActivity('Buffalo Bills @ Detroit Lions over 54.5 total'),'Bills @ Lions over 54.5');
+  assert.equal(compactSingleActivity('Detroit Lions vs Buffalo Bills under 51.5 total'),'Bills @ Lions under 51.5');
   assert.equal(findNflTeam('Bills')?.logoUrl,'https://a.espncdn.com/i/teamlogos/nfl/500/buf.png');
 });
 
