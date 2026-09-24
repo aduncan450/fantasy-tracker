@@ -51,6 +51,8 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await page.goto('/admin/');
   await startCleanTestMode(page);
   await expect(page.getByText('TEST MODE',{exact:true}).first()).toBeVisible();
+  // Safety regression: even if the lightweight marker is lost, the isolated seed/data snapshot must keep saves out of Supabase.
+  await page.evaluate(()=>localStorage.removeItem('bh_test_mode'));
   await scoreInput(page,'Duncan').fill('120');
   await scoreInput(page,'Matt').fill('110');
   await scoreInput(page,'Jacob').fill('100');
