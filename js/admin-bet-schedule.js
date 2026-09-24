@@ -10,6 +10,10 @@ function seasonYear(){
 }
 function selectedWeek(){return Number(document.querySelector('#week-picker')?.value||0)}
 function teamAbbr(team){return String(team?.abbreviation||'').toUpperCase()}
+function closeOpponentSuggestions(opponent){
+  opponent.parentElement?.querySelector('.team-suggestions')?.classList.remove('open');
+  opponent.setAttribute('aria-expanded','false');
+}
 async function schedule(){
   const season=seasonYear(),week=selectedWeek(),key=`${season}-${week}`;
   if(!week)return [];
@@ -22,13 +26,14 @@ async function fillOpponent(input){
   opponent.readOnly=true;
   opponent.setAttribute('aria-readonly','true');
   opponent.placeholder='Autofills from NFL schedule';
-  if(!pick){opponent.value='';return}
+  if(!pick){opponent.value='';closeOpponentSuggestions(opponent);return}
   const rows=await schedule(),mine=rows.find(row=>row.abbr===pick.abbr);
   if(!mine)return;
   const competition=mine.event?.competitions?.[0],other=competition?.competitors?.find(c=>teamAbbr(c.team)!==pick.abbr),otherTeam=findNflTeam(teamAbbr(other?.team));
   if(!otherTeam)return;
   const next=teamFullName(otherTeam.full);
   if(opponent.value!==next){opponent.value=next;opponent.dispatchEvent(new Event('input',{bubbles:true}))}
+  closeOpponentSuggestions(opponent);
   wrap.dataset.venue=mine.homeAway==='away'?'@':'vs';
 }
 function enhance(){
@@ -42,6 +47,7 @@ function enhance(){
   opponent.readOnly=true;
   opponent.setAttribute('aria-readonly','true');
   opponent.placeholder='Autofills from NFL schedule';
+  closeOpponentSuggestions(opponent);
   if(form.dataset.scheduleAutofill!=='1'){
     form.dataset.scheduleAutofill='1';
     input.addEventListener('input',()=>fillOpponent(input));

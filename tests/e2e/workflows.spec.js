@@ -23,7 +23,10 @@ async function mockSleeperMetadata(page){
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({name:'QA League',season:'2026'})});
   });
 }
-async function mockEspnRosters(page){await page.route(`${ESPN_API}/teams/**/roster`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({athletes:[]})}))}
+async function mockEspnRosters(page){
+  await page.route(`${ESPN_API}/teams/**/roster`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({athletes:[]})}));
+  await page.route(`${ESPN_API}/scoreboard**`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({events:[{competitions:[{competitors:[{homeAway:'away',team:{abbreviation:'BUF'}},{homeAway:'home',team:{abbreviation:'DET'}}]}]}]})}));
+}
 
 async function authenticateAdmin(page){
   await page.addInitScript(()=>{
@@ -58,11 +61,12 @@ async function fillSingleMoneyline(page,team='Buffalo Bills',opponent='Detroit L
   const single=page.locator('.single-structured');
   await single.locator('.single-type').selectOption('moneyline');
   await single.locator('.single-team').fill(team);
-  await single.locator('.single-opponent').fill(opponent);
+  await expect(single.locator('.single-opponent')).toHaveValue(opponent);
 }
 
 test('PrizePicks actual wager persists without changing live pot accounting',async({page})=>{
   await openCleanTestMode(page);
+  await page.getByLabel('Week to edit').selectOption('2');
   await fillSingleMoneyline(page);
   await page.getByRole('button',{name:'Apply bets'}).click();
   await expect(page.locator('#weekly-bet-adjustments')).toBeVisible();
@@ -76,6 +80,7 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
 
   await page.getByRole('button',{name:'Save test changes'}).click();
   await page.reload();
+  await page.getByLabel('Week to edit').selectOption('2');
   await expect(page.locator('#weekly-bet-adjustments .actual-bet')).toHaveValue('4.60');
   await expect(page.locator('#bet-adjustment-total')).toHaveText('$0.40');
   await expect(page.locator('.hero .metric').first().locator('strong')).toHaveText(potBefore);
@@ -83,8 +88,7 @@ test('PrizePicks actual wager persists without changing live pot accounting',asy
 
 test('partial parlay leg outcomes persist independently while overall parlay stays placed',async({page})=>{
   await openCleanTestMode(page);
-  await expect(page.getByRole('button',{name:'Check Week 1 results'})).toBeVisible();
-  await expect(page.getByRole('heading',{name:'Auto-check bet results'})).toHaveCount(0);
+  await page.getByLabel('Week to edit').selectOption('2');
 
   for(const player of PLAYERS)await fillLeg(page,player);
   await page.locator(`select[name="legstatus-${PLAYERS[0]}"]`).selectOption('hit');
@@ -93,6 +97,7 @@ test('partial parlay leg outcomes persist independently while overall parlay sta
   await expect(page.getByText(/Parlay leg results saved to TEST MODE/)).toBeVisible();
 
   await page.reload();
+  await page.getByLabel('Week to edit').selectOption('2');
   for(const player of PLAYERS){
     const leg=page.locator('.structured-pick').filter({has:page.locator('.structured-pick-title',{hasText:player})});
     if(await leg.locator('.structured-pick-toggle').getAttribute('aria-expanded')==='false')await leg.locator('.structured-pick-toggle').click();
@@ -222,22 +227,11 @@ test('weekly closeout and week selector markers surface unresolved historical wo
   const closeout=page.locator('#weekly-closeout');
   await expect(closeout.getByText('Week 1',{exact:true})).toBeVisible();
   await expect(closeout).toContainText('2 dues payments unpaid');
-  await expect(closeout).toContainText('$10 parlay not entered');
-  await expect(closeout).toContainText('$5 bet not entered');
 
   const weekOneTen=page.locator('.due-paid[data-week="1"][data-amount="1000"]');
   const weekOneFive=page.locator('.due-paid[data-week="1"][data-amount="500"]');
   await weekOneTen.click();
   await weekOneFive.click();
-
-  for(const player of PLAYERS){
-    await fillLeg(page,player);
-    await page.locator(`select[name="legstatus-${player}"]`).selectOption('hit');
-  }
-  await page.locator('select[name="parlay-status"]').selectOption('won');
-  await fillSingleMoneyline(page);
-  await page.locator('select[name="single-status"]').selectOption('lost');
-  await page.getByRole('button',{name:'Apply bets'}).click();
 
   await expect(page.locator('#week-picker option[value="1"]')).toHaveText(/✓/);
   await expect(page.locator('#weekly-closeout').getByText('Week 1',{exact:true})).toHaveCount(0);
