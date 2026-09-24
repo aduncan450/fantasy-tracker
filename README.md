@@ -19,8 +19,8 @@
 
 The repository has an automated regression suite so routine QA does not depend on manually replaying every league workflow.
 
-- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, supported NFL bet-result parsing/evaluation, and Thursday-based public dashboard week rollover.
-- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
+- `npm run test:unit` runs Node's built-in test runner against league rules, dues, payment reversal, historical score corrections, bet accounting, parlay stats, live-score finality, Week 17 restrictions, legacy week normalization, compact canonical parlay-history normalization, supported NFL bet-result parsing/evaluation, and Thursday-based public dashboard week rollover.
+- `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering, compact one-line parlay-leg rendering and mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
 - Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Thursday rollover boundary.
@@ -39,6 +39,8 @@ Finalized winners receive a restrained green gradient and trophy icon; the uniqu
 The public dashboard week is intentionally different from the admin workflow week. For the 2026 season, Week 1 begins Thursday, September 10. The public page advances every Thursday at **12:00 AM America/Chicago**, so finalizing a matchup on Monday does not make the public dashboard jump ahead early. Admin remains completion-driven for commissioner workflow/closeout purposes.
 
 Fantasy matchup lifecycle is shown beside the matchup data itself as **UPCOMING**, **LIVE · SLEEPER**, or **FINAL** rather than as a global page status. The betting section uses no header icon or week label; the $10 parlay uses dice and the $5 bet uses a dart hitting a bullseye. Betting display lifecycle is no badge before entry, then **PLACED**, **LIVE** once outcomes begin resolving, and **FINAL** after commissioner-saved bet statuses are settled. These display labels are derived UI only and do not change canonical bet statuses.
+
+Parlay player-prop strings use a compact canonical grammar: `pass yds`, `rush yds`, `rec yds`, `pass TD`, `rush TD`, `rec TD`, `anytime TD`, `INT`, and `receptions`. Legacy long-form strings remain readable and are normalized into the compact form when league data is loaded/saved/imported. Public rendering also abbreviates a full first name to an initial when possible so each parlay leg can stay on one line on an iPhone without changing the underlying player identity or bet meaning. Unsupported legacy free-text picks are preserved unchanged.
 
 The public dashboard section order is: pot/week summary, player cards, current matchups, current bets, season payout, recent matchups, then pot activity.
 
@@ -64,7 +66,7 @@ On the public page, a parlay leg still saved as **pending** may display a detect
 
 In admin, **Check Week N results** is read-only and shows the proposed status plus the underlying final-game evidence. It does not change tracker state. **Apply detected statuses locally** copies only settled supported statuses into the current admin form/data. The normal **Save all changes** action is still required before production Supabase changes, so pot/accounting behavior follows the same commissioner-submit boundary as the rest of the portal.
 
-The checker currently supports rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, and team-to-win/moneyline wording. Live games, unsupported descriptions, ambiguous player/team matches, and unavailable ESPN data are not guessed. Payout values and overall parlay status stay manual even when individual results are detected automatically.
+The checker currently supports rushing/receiving/passing yards, receptions, rushing/receiving/passing touchdowns, anytime TD, interceptions, moneyline/team winner, against-the-spread, and game-total over/under wording. Compact canonical player-prop wording and legacy long-form wording are both accepted. Live games, unsupported descriptions, ambiguous player/team matches, and unavailable ESPN data are not guessed. Payout values and overall parlay status stay manual even when individual results are detected automatically.
 
 ## Admin TEST MODE
 
@@ -108,7 +110,7 @@ Documentation is part of the change. Review and update `docs/SPEC.md`, this READ
 - Ties require commissioner resolution
 - Season payout projection: playoff champion 30%, each of the other three players 20%, Playoff Betting Fund 10%
 
-Existing league rows and older valid backups are normalized in memory to the current Weeks 1–17 shape before validation. Data created during the brief Week-16-final-betting implementation is migrated so Week 16 becomes a playoff week and its betting-only data moves to Week 17.
+Existing league rows and older valid backups are normalized in memory to the current Weeks 1–17 shape before validation. Data created during the brief Week-16-final-betting implementation is migrated so Week 16 becomes a playoff week and its betting-only data moves to Week 17. Supported legacy parlay player-prop strings are also normalized to the compact canonical grammar while unsupported free text is preserved.
 
 ### PrizePicks $5 stake adjustment tracking
 

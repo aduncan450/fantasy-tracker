@@ -31,15 +31,15 @@ export function parseBetPick(text){const raw=String(text??'').trim();if(!raw)ret
   const player=raw.match(/^(.+?)\s+(over|under)\s+(-?\d*\.?\d+)\s+(.+)$/i);
   if(player){const subject=player[1].trim(),direction=player[2].toLowerCase(),line=Number(player[3]),prop=clean(player[4]);let stat=null,label=null;
     const defs=[
-      [/^rushing yards?$/, 'rushingYards','rushing yards'],
-      [/^receiving yards?$/, 'receivingYards','receiving yards'],
-      [/^receptions?$/, 'receptions','receptions'],
-      [/^passing yards?$/, 'passingYards','passing yards'],
+      [/^(?:rush|rushing) (?:yds?|yards?)$/, 'rushingYards','rush yds'],
+      [/^(?:rec|receiving) (?:yds?|yards?)$/, 'receivingYards','rec yds'],
+      [/^(?:receptions?|rec)$/, 'receptions','receptions'],
+      [/^(?:pass|passing) (?:yds?|yards?)$/, 'passingYards','pass yds'],
       [/^(?:interceptions?|ints?)$/, 'interceptions','interceptions'],
-      [/^rushing (?:tds?|touchdowns?)$/, 'rushingTouchdowns','rushing touchdowns'],
-      [/^receiving (?:tds?|touchdowns?)$/, 'receivingTouchdowns','receiving touchdowns'],
-      [/^passing (?:tds?|touchdowns?)$/, 'passingTouchdowns','passing touchdowns'],
-      [/^(?:anytime )?(?:tds?|touchdowns?)$/, 'anytimeTouchdowns','anytime touchdowns']
+      [/^(?:rush|rushing) (?:tds?|touchdowns?)$/, 'rushingTouchdowns','rush TD'],
+      [/^(?:rec|receiving) (?:tds?|touchdowns?)$/, 'receivingTouchdowns','rec TD'],
+      [/^(?:pass|passing) (?:tds?|touchdowns?)$/, 'passingTouchdowns','pass TD'],
+      [/^(?:anytime )?(?:tds?|touchdowns?)$/, 'anytimeTouchdowns','anytime TD']
     ];
     for(const [re,key,name] of defs)if(re.test(prop)){stat=key;label=name;break}
     if(!stat)return {supported:false,raw,reason:`Unsupported player prop: ${player[4].trim()}`};
