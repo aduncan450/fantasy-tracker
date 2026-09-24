@@ -117,6 +117,7 @@ function reconcileAfterRender(){
     const text=card.textContent.trim();
     if(/Saved to Supabase\.|Saved to isolated TEST MODE storage\.|Parlay leg results saved/.test(text)){clearDirty();clearDraft()}
     if(/TEST MODE started|TEST MODE reset|Exited TEST MODE|Signed out/.test(text)){clearDirty();clearDraft()}
+    if(/Bets applied locally|Scores applied locally|Incomplete scores applied locally|Sleeper roster mapping saved locally/.test(text)){clearDraft();markDirty()}
     if(/Backup loaded locally/.test(text))markDirty();
     if(/Sleeper Week \d+ (live|final) scores imported locally/.test(text))markDirty();
   }
