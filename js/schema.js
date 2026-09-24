@@ -1,4 +1,4 @@
-import {canonicalizePlayerPick} from './bet-entry.js?v=20260923-compact-parlay1';
+import {canonicalizePlayerPick} from './bet-entry.js?v=20260923-team-logos1';
 export const PLAYERS=['Duncan','Jacob','Matt','Weston'];
 const BET_STATUSES=['placed','won','lost','push','void'],LEG_STATUSES=['pending','hit','miss','push'];
 const cycle=[[['Duncan','Matt'],['Jacob','Weston']],[['Duncan','Weston'],['Jacob','Matt']],[['Duncan','Jacob'],['Weston','Matt']]];
