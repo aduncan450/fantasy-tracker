@@ -1,5 +1,5 @@
 const app=document.querySelector('#app');
-const RECOVERY_VERSION='20260923-compact-parlay1';
+const RECOVERY_VERSION='20260924-test-mode-state1';
 const TEST_MODE_KEY='bh_test_mode',TEST_DATA_KEY='bh_test_data',TEST_SEED_KEY='bh_test_seed';
 const RECOVERED_KEY='bh_admin_recovered_test_mode';
 const ADMIN_RENDER_EVENT='fantasy-admin-rendered';
@@ -55,6 +55,9 @@ new MutationObserver(mutations=>{
 
 recoverObviouslyBrokenTestMode();
 try{
+  // admin.js still references the legacy storage cache key. Force-refresh that exact URL so
+  // browsers cannot run stale TEST MODE persistence logic after a deployment.
+  await fetch(new URL('./storage.js?v=20260923-compact-parlay1',import.meta.url),{cache:'reload'}).catch(()=>{});
   await import(`./admin.js?v=${RECOVERY_VERSION}`);
   if(sessionStorage.getItem(RECOVERED_KEY)==='1'){
     sessionStorage.removeItem(RECOVERED_KEY);
