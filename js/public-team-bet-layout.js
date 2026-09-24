@@ -22,7 +22,7 @@ function venueFor(team,opponent,games){
     const mine=competitors.find(c=>String(c?.team?.abbreviation||'').toUpperCase()===team.abbr),other=competitors.find(c=>String(c?.team?.abbreviation||'').toUpperCase()===opponent.abbr);
     if(mine&&other)return mine.homeAway==='away'?'@':'vs';
   }
-  return 'vs';
+  return '·';
 }
 async function enhanceCard(card){
   if(card.dataset.matchupLayout==='1')return;
