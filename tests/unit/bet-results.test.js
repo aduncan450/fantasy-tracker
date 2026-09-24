@@ -14,10 +14,10 @@ test('parses legacy and compact supported player props plus team picks',()=>{
   assert.equal(parseBetPick('D. Montgomery Over .5 Anytime TD').stat,'anytimeTouchdowns');
   assert.deepEqual(parseBetPick('J. Allen Over .5 INT'),{supported:true,kind:'player-prop',raw:'J. Allen Over .5 INT',subject:'J. Allen',direction:'over',line:0.5,stat:'interceptions',statLabel:'interceptions'});
   assert.deepEqual(parseBetPick('Bills to Win vs Lions'),{supported:true,kind:'team-win',raw:'Bills to Win vs Lions',team:'Bills',opponent:'Lions'});
-  assert.deepEqual(parseBetPick('Buffalo Bills to beat Detroit Lions'),{supported:true,kind:'team-win',raw:'Buffalo Bills to beat Detroit Lions',team:'Buffalo Bills',opponent:'Detroit Lions'});
+  assert.deepEqual(parseBetPick('Buffalo Bills @ Detroit Lions ML'),{supported:true,kind:'team-win',raw:'Buffalo Bills @ Detroit Lions ML',team:'Buffalo Bills',opponent:'Detroit Lions'});
   assert.deepEqual(parseBetPick('BUF -3.5 spread'),{supported:true,kind:'team-spread',raw:'BUF -3.5 spread',team:'BUF',line:-3.5});
-  assert.deepEqual(parseBetPick('Buffalo Bills -3.5 vs Detroit Lions'),{supported:true,kind:'team-spread',raw:'Buffalo Bills -3.5 vs Detroit Lions',team:'Buffalo Bills',opponent:'Detroit Lions',line:-3.5});
-  assert.deepEqual(parseBetPick('BUF vs DET over 54.5 total'),{supported:true,kind:'team-total',raw:'BUF vs DET over 54.5 total',team:'BUF',opponent:'DET',direction:'over',line:54.5});
+  assert.deepEqual(parseBetPick('Buffalo Bills -3.5 @ Detroit Lions ATS'),{supported:true,kind:'team-spread',raw:'Buffalo Bills -3.5 @ Detroit Lions ATS',team:'Buffalo Bills',opponent:'Detroit Lions',line:-3.5});
+  assert.deepEqual(parseBetPick('BUF @ DET over 54.5 total'),{supported:true,kind:'team-total',raw:'BUF @ DET over 54.5 total',team:'BUF',opponent:'DET',direction:'over',line:54.5});
 });
 
 test('matches abbreviated names including suffixes',()=>{
@@ -35,12 +35,12 @@ test('evaluates current Week 2 examples from final box scores in legacy and comp
   assert.equal(evaluateBetPick(parseBetPick('J. Allen over 0.5 INT'),snapshot).status,'hit');
   assert.equal(evaluateBetPick(parseBetPick('J. Allen under 1.5 INT'),snapshot).status,'hit');
   assert.equal(evaluateBetPick(parseBetPick('Bills to Win vs Lions'),snapshot).status,'won');
-  assert.equal(evaluateBetPick(parseBetPick('Buffalo Bills to beat Detroit Lions'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('Buffalo Bills @ Detroit Lions ML'),snapshot).status,'won');
   assert.equal(evaluateBetPick(parseBetPick('BUF -3.5 spread'),snapshot).status,'won');
-  assert.equal(evaluateBetPick(parseBetPick('Buffalo Bills -3.5 vs Detroit Lions'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('Buffalo Bills -3.5 @ Detroit Lions ATS'),snapshot).status,'won');
   assert.equal(evaluateBetPick(parseBetPick('DET +3.5 spread'),snapshot).status,'lost');
-  assert.equal(evaluateBetPick(parseBetPick('BUF vs DET over 54.5 total'),snapshot).status,'won');
-  assert.equal(evaluateBetPick(parseBetPick('BUF vs DET under 58 total'),snapshot).status,'push');
+  assert.equal(evaluateBetPick(parseBetPick('BUF @ DET over 54.5 total'),snapshot).status,'won');
+  assert.equal(evaluateBetPick(parseBetPick('BUF @ DET under 58 total'),snapshot).status,'push');
 });
 
 test('does not settle a supported pick before its game is final',()=>{
