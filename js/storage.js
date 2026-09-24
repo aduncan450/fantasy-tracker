@@ -8,14 +8,13 @@ const readJson=key=>{try{return JSON.parse(localStorage.getItem(key)||'null')}ca
 const readSession=()=>readJson(SESSION_KEY);
 const storeSession=s=>{localStorage.setItem(SESSION_KEY,JSON.stringify(s));return s};
 export function isTestMode(){return localStorage.getItem(TEST_MODE_KEY)==='1'}
-const adminShowsTestMode=()=>typeof document!=='undefined'&&document.body?.classList.contains('test-mode');
 function prepareLeague(d){normalizeLeague(d);validateLeague(d);return d}
 function readTestData(key=TEST_DATA_KEY){const d=readJson(key);if(!d)throw new Error('Test data is missing. Exit test mode and start again.');return prepareLeague(d)}
 function writeTestData(key,data){prepareLeague(data);localStorage.setItem(key,JSON.stringify(data));return data}
 export async function loadLeague(){if(!isConfigured())return initialLeague();const r=await fetch(`${SUPABASE_URL}/rest/v1/leagues?id=eq.${encodeURIComponent(LEAGUE_ID)}&select=data`,{headers:headers(),cache:'no-store'});if(!r.ok)throw new Error('Could not load league data.');const rows=await r.json();if(!rows[0])return initialLeague();return prepareLeague(rows[0].data);}
 export async function loadAdminLeague(){return isTestMode()?readTestData():loadLeague()}
 export async function saveLeague(data,accessToken){prepareLeague(data);if(!isConfigured())throw new Error('Supabase is not configured yet.');data.metadata.lastUpdated=new Date().toISOString();const h=headers();h.Authorization=`Bearer ${accessToken}`;h.Prefer='resolution=merge-duplicates';const r=await fetch(`${SUPABASE_URL}/rest/v1/leagues?on_conflict=id`,{method:'POST',headers:h,body:JSON.stringify({id:LEAGUE_ID,data})});if(!r.ok)throw new Error('Could not save changes. Previous remote data is intact.');return data;}
-export async function saveAdminLeague(data,accessToken){prepareLeague(data);const testMode=isTestMode()||adminShowsTestMode();if(!testMode)return saveLeague(data,accessToken);localStorage.setItem(TEST_MODE_KEY,'1');data.metadata=data.metadata||{};data.metadata.lastUpdated=new Date().toISOString();writeTestData(TEST_DATA_KEY,data);return data}
+export async function saveAdminLeague(data,accessToken){prepareLeague(data);if(!isTestMode())return saveLeague(data,accessToken);data.metadata=data.metadata||{};data.metadata.lastUpdated=new Date().toISOString();writeTestData(TEST_DATA_KEY,data);return data}
 export async function enterTestMode(source='production'){const seed=source==='clean'?initialLeague():await loadLeague();prepareLeague(seed);writeTestData(TEST_SEED_KEY,clone(seed));writeTestData(TEST_DATA_KEY,clone(seed));localStorage.setItem(TEST_MODE_KEY,'1');return readTestData()}
 export function resetTestMode(){if(!isTestMode())throw new Error('Test mode is not active.');const seed=readTestData(TEST_SEED_KEY);writeTestData(TEST_DATA_KEY,clone(seed));return readTestData()}
 export function exitTestMode(){localStorage.removeItem(TEST_MODE_KEY);localStorage.removeItem(TEST_DATA_KEY);localStorage.removeItem(TEST_SEED_KEY)}
