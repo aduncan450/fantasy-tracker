@@ -7,6 +7,8 @@ const SLEEPER_API='https://api.sleeper.app/v1';
 const ESPN_API='https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 const PLAYERS=initialLeague().players;
 const clone=x=>JSON.parse(JSON.stringify(x));
+const testModeState=page=>page.evaluate(()=>({flag:localStorage.getItem('bh_test_mode'),data:Boolean(localStorage.getItem('bh_test_data')),seed:Boolean(localStorage.getItem('bh_test_seed')),shared:window.__fantasyTestModeState?.active,body:document.body.classList.contains('test-mode')}));
+const expectTestMode=async page=>expect(await testModeState(page)).toMatchObject({flag:'1',data:true,seed:true,shared:true,body:true});
 
 async function mockProduction(page,data){
   await page.route(`${SUPABASE_URL}/rest/v1/leagues**`,async route=>{
@@ -74,13 +76,16 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await page.goto('/admin/');
   await page.getByRole('button',{name:'TEST MODE',exact:true}).click();
   await page.getByRole('button',{name:'Test clean league'}).click();
+  await expectTestMode(page);
   await page.getByLabel('Week to edit').selectOption('2');
+  await expectTestMode(page);
 
   await fillLeg(page,'Duncan',{player:'K. Walker III',line:78.5});
   await fillLeg(page,'Jacob',{player:'S. Barkley',line:94.5});
   await fillLeg(page,'Matt',{player:'D. Montgomery',prop:'anytime touchdowns',line:.5});
   await fillLeg(page,'Weston',{player:'J. Gibbs',prop:'anytime touchdowns',line:.5});
   await fillSingleMoneyline(page,'Buffalo Bills');
+  await expectTestMode(page);
 
   await page.getByRole('button',{name:'Check Week 2 results'}).click();
   await expect(page.getByText('Duncan · HIT')).toBeVisible();
@@ -90,6 +95,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.getByText('$5 bet · WON')).toBeVisible();
   await expect(page.locator('select[name="legstatus-Duncan"]')).toHaveValue('pending');
   await expect(page.locator('select[name="single-status"]')).toHaveValue('placed');
+  await expectTestMode(page);
 
   await page.locator('#apply-bet-results').click();
   await expect(page.getByText('Bets applied locally. Save when ready.')).toBeVisible();
@@ -100,6 +106,7 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expect(page.locator('select[name="single-status"]')).toHaveValue('won');
   await expect(page.locator('select[name="parlay-status"]')).toHaveValue('placed');
   await expect(page.locator('input[name="single-payout"]')).toHaveValue('0');
+  await expectTestMode(page);
 
   await page.getByRole('button',{name:'Save test changes'}).click();
   await expect(page.getByText('Saved to isolated TEST MODE storage. Production was not changed.')).toBeVisible();
