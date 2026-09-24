@@ -88,6 +88,7 @@ The admin portal protects in-memory changes that have not yet reached the active
 4. Browser unloads and destructive actions that can discard dirty data must remain guarded.
 5. Track raw form typing that still requires its existing **Apply** action as unapplied draft state, not dirty league state. Warn before discarding that draft, and reserve the sticky save indicator for data the main save path can actually persist.
 6. Weekly closeout and week-selector attention markers are derived UI state only. Do not add schema fields or persistence solely to store those indicators.
+7. TEST MODE persistence must fail closed. If the rendered admin is still in TEST MODE but the browser mode marker is transiently lost, a save must stay in isolated browser storage and restore TEST MODE state rather than falling through to production Supabase. Keep browser coverage that explicitly asserts zero Supabase league writes for this race.
 
 ## QA expectations
 
