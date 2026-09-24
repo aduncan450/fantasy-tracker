@@ -1,4 +1,4 @@
-import {findNflTeam} from './bet-entry.js?v=20260924-bet-matchup2';
+import {findNflTeam} from './bet-entry.js?v=20260924-pot-activity1';
 
 const BASE='https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 let schedulePromise=null;
