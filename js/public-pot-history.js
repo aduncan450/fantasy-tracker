@@ -23,6 +23,25 @@ function rowHtml(row){
   return `<div class="history-row"><span>${row.season?'SEASON':`W${row.week??'—'}`} · ${esc(activityLabel(row))}</span><b>${row.amountCents>=0?'+':''}${money(row.amountCents)}</b></div>`;
 }
 
+function activityPriority(row){
+  if(row.kind==='dues-payment')return 0;
+  if(row.kind==='payout')return 1;
+  if(row.kind==='stake')return 2;
+  return 3;
+}
+
+function orderedRows(data){
+  return ledger(data)
+    .map((row,index)=>({...row,__index:index}))
+    .sort((a,b)=>{
+      const weekA=a.season?Number.POSITIVE_INFINITY:Number(a.week??-1);
+      const weekB=b.season?Number.POSITIVE_INFINITY:Number(b.week??-1);
+      if(weekA!==weekB)return weekB-weekA;
+      const priority=activityPriority(a)-activityPriority(b);
+      return priority||a.__index-b.__index;
+    });
+}
+
 function potActivityCard(){
   return [...app.querySelectorAll('.card')].find(card=>card.querySelector('.section-main-label')?.textContent.trim().toLowerCase()==='pot activity');
 }
@@ -35,7 +54,7 @@ async function renderFullHistory(){
   try{
     const data=await loadLeague();
     const current=dashboardWeek(data),recentWeeks=new Set([current,current-1].filter(week=>week>=1));
-    const rows=ledger(data).slice().reverse();
+    const rows=orderedRows(data);
     const recent=rows.filter(row=>row.season||recentWeeks.has(Number(row.week)));
     const older=rows.filter(row=>!row.season&&!recentWeeks.has(Number(row.week)));
 
