@@ -50,6 +50,30 @@ test('completed current matchup shows compact dues only after final scores',asyn
   await expect(current.locator('.current-dues .pill')).toHaveCount(2);
 });
 
+test('public parlay legs use compact one-line wording without mobile overflow',async({page})=>{
+  const production=initialLeague();
+  const week2=production.weeks.find(w=>w.week===2);
+  week2.bets=[{stakeCents:1000,type:'parlay',description:'$10 parlay',status:'lost',payoutCents:0,legs:[
+    {player:'Duncan',pick:'K. Walker III Over 78.5 Rushing Yards',status:'hit'},
+    {player:'Jacob',pick:'S. Barkley over 94.5 Rushing Yards',status:'miss'},
+    {player:'Matt',pick:'D. Montgomery Over .5 Anytime TD',status:'miss'},
+    {player:'Weston',pick:'J. Gibbs Over .5 Anytime TD',status:'hit'}
+  ]}];
+  await mockProduction(page,production);
+  await freezeWeek2(page);
+  await page.goto('/');
+
+  const picks=page.locator('.bets-card .parlay-leg > span');
+  await expect(picks).toHaveCount(4);
+  await expect(picks.nth(0)).toHaveText('K. WALKER III OVER 78.5 RUSH YDS');
+  await expect(picks.nth(1)).toHaveText('S. BARKLEY OVER 94.5 RUSH YDS');
+  await expect(picks.nth(2)).toHaveText('D. MONTGOMERY OVER 0.5 ANYTIME TD');
+  const oneLine=await picks.evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).whiteSpace==='nowrap'&&node.scrollHeight<=node.clientHeight+1));
+  expect(oneLine).toBe(true);
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
 test('completed matchup styling keeps winner and loser cues distinct with compact right-aligned dues',async({page})=>{
   const production=initialLeague();
   const week1=production.weeks.find(w=>w.week===1);
