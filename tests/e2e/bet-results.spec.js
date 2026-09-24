@@ -109,7 +109,8 @@ test('admin auto-check previews ESPN outcomes, then applies locally before save'
   await expectTestMode(page);
 
   await page.getByRole('button',{name:'Save test changes'}).click();
-  await expect(page.getByText('Saved to isolated TEST MODE storage. Production was not changed.')).toBeVisible();
+  await expectTestMode(page);
+  await expect(page.locator('.card.success,.card.error').first()).toContainText('Saved to isolated TEST MODE storage. Production was not changed.');
   const saved=await page.evaluate(()=>{
     const data=JSON.parse(localStorage.getItem('bh_test_data')||'null');
     const week=data?.weeks?.find(w=>w.week===2);
