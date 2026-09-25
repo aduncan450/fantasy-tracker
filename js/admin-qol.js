@@ -1,7 +1,7 @@
 import {currentWeek,duesRows,weekResult} from './calculations.js?v=20260920-live-sleeper';
 
 const app=document.querySelector('#app');
-let dirty=false,draftDirty=false,lastWeekValue=null,draftWeekValue=null;
+let dirty=false,draftDirty=false,legStatusOnlyDraft=false,lastWeekValue=null,draftWeekValue=null;
 const handledMessages=new WeakSet();
 const admin=()=>window.__fantasyAdmin;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -20,8 +20,15 @@ function syncDirtyUi(){
 }
 function markDirty(){dirty=true;syncDirtyUi()}
 function clearDirty(){dirty=false;syncDirtyUi()}
-function markDraft(){if(!draftDirty)draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;draftDirty=true;syncDirtyUi()}
-function clearDraft(){draftDirty=false;draftWeekValue=null;syncDirtyUi()}
+function markDraft({legStatusOnly=false}={}){
+  if(!draftDirty){
+    draftWeekValue=document.querySelector('#week-picker')?.value||lastWeekValue;
+    legStatusOnlyDraft=legStatusOnly;
+  }else legStatusOnlyDraft=legStatusOnlyDraft&&legStatusOnly;
+  draftDirty=true;
+  syncDirtyUi();
+}
+function clearDraft(){draftDirty=false;legStatusOnlyDraft=false;draftWeekValue=null;syncDirtyUi()}
 function discardGuard(message){return (!dirty&&!draftDirty)||confirm(message)}
 window.addEventListener('beforeunload',e=>{if(!dirty&&!draftDirty)return;e.preventDefault();e.returnValue=''});
 
@@ -126,7 +133,7 @@ function reconcileAfterRender(){
 
 app.addEventListener('input',e=>{
   if(e.target.matches?.('#weekly-bet-adjustments .actual-bet'))markDirty();
-  else if(e.target.closest?.('#scores,#bets,#sleeper-map'))markDraft();
+  else if(e.target.closest?.('#scores,#bets,#sleeper-map'))markDraft({legStatusOnly:e.target.matches?.('#bets select[name^="legstatus-"]')});
 },true);
 app.addEventListener('submit',e=>{if(e.target.matches?.('#scores,#bets,#sleeper-map')){clearDraft();markDirty()}},true);
 app.addEventListener('change',e=>{
@@ -139,12 +146,18 @@ app.addEventListener('change',e=>{
     lastWeekValue=next;
     return;
   }
+  if(e.target.matches?.('#bets select[name^="legstatus-"]')){markDraft({legStatusOnly:true});return}
   if(e.target.matches?.('.due-paid'))markDirty();
 },true);
 app.addEventListener('click',e=>{
   const target=e.target.closest?.('button,a');
   if(!target)return;
-  if(target.matches('#save,#sticky-save')&&draftDirty){alert('Apply or discard the current form edits before saving.');e.preventDefault();e.stopImmediatePropagation();return}
+  if(target.matches('#save,#sticky-save')&&draftDirty){
+    if(legStatusOnlyDraft){
+      e.preventDefault();e.stopImmediatePropagation();document.querySelector('#save-leg-results')?.click();return;
+    }
+    alert('Apply or discard the current form edits before saving.');e.preventDefault();e.stopImmediatePropagation();return;
+  }
   if(target.matches('#edit-sleeper-map'))markDirty();
   if(target.matches('#logout')&&!discardGuard('Sign out and discard unsaved or unapplied changes?')){e.preventDefault();e.stopImmediatePropagation();return}
   if(target.matches('#test-production,#test-clean')&&!discardGuard('Discard unsaved or unapplied changes and start TEST MODE?')){e.preventDefault();e.stopImmediatePropagation();return}
