@@ -217,7 +217,7 @@ function ensureLegStatusStyles(){
   if(document.querySelector('#admin-leg-status-styles'))return;
   const style=document.createElement('style');
   style.id='admin-leg-status-styles';
-  style.textContent='.structured-pick-toggle.has-leg-status-pill{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto}.structured-pick-toggle.has-leg-status-pill .structured-pick-owner{grid-column:1;grid-row:1}.structured-pick-toggle.has-leg-status-pill .admin-leg-status-pill{grid-column:2;grid-row:1;justify-self:start}.structured-pick-toggle.has-leg-status-pill .structured-pick-summary{grid-column:1/3;grid-row:2}.structured-pick-toggle.has-leg-status-pill .structured-pick-chevron{grid-column:3;grid-row:1/3}.structured-pick-toggle.has-leg-status-pill.is-empty-summary{grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-rows:auto}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .admin-leg-status-pill{grid-column:2;grid-row:1}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .structured-pick-summary{grid-column:3;grid-row:1}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .structured-pick-chevron{grid-column:4;grid-row:1}.admin-leg-status-pill{align-self:center;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:.56rem;font-weight:900;letter-spacing:.06em;line-height:1;padding:4px 7px;text-transform:uppercase;white-space:nowrap}.admin-leg-status-pill[data-status="hit"]{border-color:rgba(110,231,183,.45);background:rgba(110,231,183,.08);color:var(--accent)}.admin-leg-status-pill[data-status="miss"]{border-color:rgba(248,113,113,.48);background:rgba(248,113,113,.08);color:#f87171}.admin-leg-status-pill[data-status="push"]{border-color:rgba(251,191,36,.42);background:rgba(251,191,36,.08);color:var(--warning)}@media(max-width:560px){.structured-pick-toggle.has-leg-status-pill{column-gap:7px}.admin-leg-status-pill{font-size:.52rem;padding:4px 6px}}';
+  style.textContent='.structured-pick-toggle.has-leg-status-pill{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto}.structured-pick-toggle.has-leg-status-pill .structured-pick-owner{grid-column:1;grid-row:1}.structured-pick-toggle.has-leg-status-pill .admin-leg-status-pill{grid-column:2;grid-row:1;justify-self:start}.structured-pick-toggle.has-leg-status-pill .structured-pick-summary{grid-column:1/3;grid-row:2}.structured-pick-toggle.has-leg-status-pill .structured-pick-chevron{grid-column:3;grid-row:1/3}.structured-pick-toggle.has-leg-status-pill.is-empty-summary{grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-rows:auto}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .admin-leg-status-pill{grid-column:2;grid-row:1}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .structured-pick-summary{grid-column:3;grid-row:1}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .structured-pick-chevron{grid-column:4;grid-row:1}.admin-leg-status-pill{align-self:center;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:.56rem;font-weight:900;letter-spacing:.06em;line-height:1;padding:4px 7px;text-transform:uppercase;white-space:nowrap}.admin-leg-status-pill[data-status="hit"]{border-color:rgba(110,231,183,.45);background:rgba(110,231,183,.08);color:var(--accent)}.admin-leg-status-pill[data-status="miss"]{border-color:rgba(248,113,113,.48);background:rgba(248,113,113,.08);color:#f87171}.admin-leg-status-pill[data-status="push"]{border-color:rgba(251,191,36,.42);background:rgba(251,191,36,.08);color:var(--warning)}.single-structured.admin-single-collapsible.is-collapsed .structured-pick-toggle{margin:0}.single-structured.admin-single-collapsible.is-collapsed .structured-fields{display:none}@media(max-width:560px){.structured-pick-toggle.has-leg-status-pill{column-gap:7px}.admin-leg-status-pill{font-size:.52rem;padding:4px 6px}}';
   document.head.append(style);
 }
 
@@ -249,6 +249,36 @@ function compactLegStatuses(form){
   }
 }
 
+function compactSingleBet(form){
+  ensureLegStatusStyles();
+  const wrap=form.querySelector('.single-structured');
+  const source=form.querySelector('textarea[name="single-desc"]');
+  if(!wrap||!source||wrap.dataset.collapsible)return;
+  wrap.dataset.collapsible='1';
+  wrap.classList.add('admin-single-collapsible');
+  const toggle=document.createElement('button');
+  toggle.type='button';
+  toggle.className='structured-pick-toggle';
+  toggle.setAttribute('aria-expanded','false');
+  toggle.innerHTML='<span class="structured-pick-owner structured-pick-title">$5 BET</span><span class="structured-pick-summary"></span><span class="structured-pick-chevron" aria-hidden="true">⌄</span>';
+  wrap.prepend(toggle);
+  const summary=toggle.querySelector('.structured-pick-summary');
+  const sync=()=>{
+    const value=String(source.value||'').trim();
+    summary.textContent=value||'No bet selected';
+    toggle.classList.toggle('is-empty-summary',!value);
+  };
+  const setCollapsed=collapsed=>{
+    wrap.classList.toggle('is-collapsed',collapsed);
+    toggle.setAttribute('aria-expanded',String(!collapsed));
+  };
+  wrap.addEventListener('input',sync);
+  wrap.addEventListener('change',sync);
+  toggle.addEventListener('click',()=>setCollapsed(!wrap.classList.contains('is-collapsed')));
+  sync();
+  setCollapsed(true);
+}
+
 function compactBetCopy(){
   const form=app.querySelector('#bets');
   const card=form?.closest('.card');
@@ -260,6 +290,7 @@ function compactBetCopy(){
   if(bettingOnly)bettingOnly.textContent='BETTING ONLY — NO SCORES OR DUES.';
   compactBetMeta(form);
   compactLegStatuses(form);
+  compactSingleBet(form);
 
   const saveLegs=card.querySelector('#save-leg-results');
   if(saveLegs){
