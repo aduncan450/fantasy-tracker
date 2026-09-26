@@ -213,6 +213,42 @@ function compactBetMeta(form){
   }
 }
 
+function ensureLegStatusStyles(){
+  if(document.querySelector('#admin-leg-status-styles'))return;
+  const style=document.createElement('style');
+  style.id='admin-leg-status-styles';
+  style.textContent='.structured-pick-toggle.has-leg-status-pill{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto}.structured-pick-toggle.has-leg-status-pill .structured-pick-owner{grid-column:1;grid-row:1}.structured-pick-toggle.has-leg-status-pill .admin-leg-status-pill{grid-column:2;grid-row:1;justify-self:start}.structured-pick-toggle.has-leg-status-pill .structured-pick-summary{grid-column:1/3;grid-row:2}.structured-pick-toggle.has-leg-status-pill .structured-pick-chevron{grid-column:3;grid-row:1/3}.structured-pick-toggle.has-leg-status-pill.is-empty-summary{grid-template-columns:auto auto minmax(0,1fr) auto;grid-template-rows:auto}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .admin-leg-status-pill{grid-column:2;grid-row:1}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .structured-pick-summary{grid-column:3;grid-row:1}.structured-pick-toggle.has-leg-status-pill.is-empty-summary .structured-pick-chevron{grid-column:4;grid-row:1}.admin-leg-status-pill{align-self:center;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:.56rem;font-weight:900;letter-spacing:.06em;line-height:1;padding:4px 7px;text-transform:uppercase;white-space:nowrap}.admin-leg-status-pill[data-status="hit"]{border-color:rgba(110,231,183,.45);background:rgba(110,231,183,.08);color:var(--accent)}.admin-leg-status-pill[data-status="miss"]{border-color:rgba(248,113,113,.48);background:rgba(248,113,113,.08);color:#f87171}.admin-leg-status-pill[data-status="push"]{border-color:rgba(251,191,36,.42);background:rgba(251,191,36,.08);color:var(--warning)}@media(max-width:560px){.structured-pick-toggle.has-leg-status-pill{column-gap:7px}.admin-leg-status-pill{font-size:.52rem;padding:4px 6px}}';
+  document.head.append(style);
+}
+
+function compactLegStatuses(form){
+  ensureLegStatusStyles();
+  for(const leg of form.querySelectorAll('.leg-editor.structured-leg')){
+    const toggle=leg.querySelector('.structured-pick-toggle');
+    const owner=toggle?.querySelector('.structured-pick-owner');
+    const result=leg.querySelector('select[name^="legstatus-"]');
+    if(!toggle||!owner||!result)continue;
+    let pill=toggle.querySelector('.admin-leg-status-pill');
+    if(!pill){
+      pill=document.createElement('span');
+      pill.className='admin-leg-status-pill';
+      owner.insertAdjacentElement('afterend',pill);
+      toggle.classList.add('has-leg-status-pill');
+    }
+    const sync=()=>{
+      const status=String(result.value||'pending').toLowerCase();
+      pill.textContent=status;
+      pill.dataset.status=status;
+      pill.setAttribute('aria-label',`Leg result: ${status}`);
+    };
+    if(!result.dataset.summaryStatusWired){
+      result.dataset.summaryStatusWired='1';
+      result.addEventListener('change',sync);
+    }
+    sync();
+  }
+}
+
 function compactBetCopy(){
   const form=app.querySelector('#bets');
   const card=form?.closest('.card');
@@ -223,6 +259,7 @@ function compactBetCopy(){
   const bettingOnly=[...card.querySelectorAll(':scope > p.muted')].find(p=>p.textContent.includes('Betting-only period'));
   if(bettingOnly)bettingOnly.textContent='BETTING ONLY — NO SCORES OR DUES.';
   compactBetMeta(form);
+  compactLegStatuses(form);
 
   const saveLegs=card.querySelector('#save-leg-results');
   if(saveLegs){
