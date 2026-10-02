@@ -1,0 +1,5 @@
+node_modules/
+.pnpm-store/
+.playwright-browsers/
+test-results/
+playwright-report/

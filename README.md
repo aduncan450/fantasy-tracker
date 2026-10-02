@@ -23,10 +23,13 @@ The repository has an automated regression suite so routine QA does not depend o
 - `npm run test:e2e` runs Playwright browser tests against a local static server with mocked Supabase/Sleeper/ESPN responses. It covers TEST MODE persistence/isolation, payment/accounting behavior, historical corrections, public live Sleeper overlays, public read-only automatic bet outcomes, public dashboard/status rendering, compact one-line parlay-leg rendering, $5 full-name matchup/logo rendering, mobile overflow safety, graceful external-feed fallback, admin dirty-state/sticky-save behavior, unapplied-draft navigation protection, weekly closeout/selector markers, and admin bet-result preview/apply behavior.
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
+- Admin test helpers open the collapsible $5 editor and wait for visible fields before entering a wager.
 - Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Wednesday-noon rollover boundary, including daylight-saving transitions.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
 
 The tests mock external writes and APIs; they do not modify the production Supabase league row. Manual TEST MODE QA remains useful for visual judgment and genuinely new workflows, but existing covered behavior should be protected by automated tests first.
+
+Local dependencies, browser downloads, and test reports are ignored by Git. On Windows, an already-running static server on `127.0.0.1:4173` can be reused when `python3` is not on PATH. If parallel tests show localhost `ERR_CONNECTION_REFUSED` for static assets, check the server's connection backlog before changing product code; a Python `ThreadingHTTPServer` backlog of 128 handled the local Chromium test burst.
 
 ## Public dashboard presentation and week timing
 
@@ -45,6 +48,8 @@ Parlay player-prop strings use a compact canonical grammar: `pass yds`, `rush yd
 Structured $5 team entries capture both the selected team and opponent and generate human-readable full-name descriptions such as `Buffalo Bills to beat Detroit Lions`. The public $5 card shows both full team names, the selected side (or total), and the actual ESPN-hosted team logo image for each side. Legacy supported descriptions such as `Bills to Win vs Lions` are still parsed into the same full-name/logo display when both teams can be identified. Logo URLs are presentation metadata only and are never stored in league data.
 
 The public dashboard section order is: pot/week summary, player cards, current matchups, current bets, season payout, recent matchups, then pot activity.
+
+The $5 selected team uses heavier type with a neutral slate background and border. Both its location and nickname turn green when the wager wins or muted red when it loses; placed, push, and void remain neutral. The opponent stays muted. Game totals highlight the Over/Under selection instead of either team. Read-only automatic outcomes use the same colors while retaining the existing auto-result disclosure.
 
 ## Admin workflow safeguards
 

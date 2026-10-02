@@ -43,6 +43,10 @@ async function fillLeg(page,owner,{player,prop='rushing yards',direction='over',
 }
 async function fillSingleMoneyline(page,team,opponent='Detroit Lions'){
   const single=page.locator('.single-structured');
+  const toggle=single.locator('.structured-pick-toggle');
+  await expect(toggle).toBeVisible();
+  if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
+  await expect(single.locator('.single-type')).toBeVisible();
   await single.locator('.single-type').selectOption('moneyline');
   await single.locator('.single-team').fill(team);
   const opponentInput=single.locator('.single-opponent');
