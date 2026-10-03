@@ -41,6 +41,13 @@ async function startCleanTestMode(page){
   const cleanButton=page.locator('#test-clean-dialog');
   await expect(cleanButton).toBeVisible();
   await cleanButton.click();
+  await expect(page.locator('body')).toHaveClass(/test-mode/);
+  await expect(page.locator('#save')).toHaveText('Save test changes');
+  await expect.poll(()=>page.evaluate(()=>({
+    active:localStorage.getItem('bh_test_mode'),
+    data:Boolean(localStorage.getItem('bh_test_data')),
+    seed:Boolean(localStorage.getItem('bh_test_seed'))
+  }))).toEqual({active:'1',data:true,seed:true});
 }
 
 test('TEST MODE clean-league workflow persists scores and dues across refresh without leaking public',async({page})=>{
@@ -50,7 +57,7 @@ test('TEST MODE clean-league workflow persists scores and dues across refresh wi
   await authenticateAdmin(page);
   await page.goto('/admin/');
   await startCleanTestMode(page);
-  await expect(page.getByText('TEST MODE',{exact:true}).first()).toBeVisible();
+  await expect(page.locator('.test-mode-banner')).toBeVisible();
   await scoreInput(page,'Duncan').fill('120');
   await scoreInput(page,'Matt').fill('110');
   await scoreInput(page,'Jacob').fill('100');

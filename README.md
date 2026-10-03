@@ -24,6 +24,7 @@ The repository has an automated regression suite so routine QA does not depend o
 - `npm test` runs both layers.
 - Browser tests run in desktop Chromium and an iPhone-sized Playwright project.
 - Admin test helpers open the collapsible $5 editor and wait for visible fields before entering a wager.
+- TEST MODE entry helpers wait for the active mode, test-save control, and isolated storage before editing; the launcher text alone is not evidence that TEST MODE started.
 - Calendar-dependent public browser tests freeze their date so CI remains stable across future weeks; unit tests verify the real Wednesday-noon rollover boundary, including daylight-saving transitions.
 - `.github/workflows/qa.yml` runs the automated suite on every push to `main` and on pull requests.
 
