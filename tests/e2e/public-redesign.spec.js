@@ -3,6 +3,11 @@ import {initialLeague} from '../../js/schema.js';
 import {SUPABASE_URL} from '../../js/config.js';
 
 const clone=x=>JSON.parse(JSON.stringify(x));
+test.beforeEach(async({page})=>{
+  await page.route('https://api.sleeper.app/**',route=>route.abort());
+  await page.route('https://site.api.espn.com/**',route=>route.abort());
+  await page.route('https://a.espncdn.com/**',route=>route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="54" height="54"/>'}));
+});
 async function mockProduction(page,data){
   await page.route(`${SUPABASE_URL}/rest/v1/leagues**`,async route=>{
     if(route.request().method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{data:clone(data)}])});
@@ -117,4 +122,42 @@ test('public $5 card shows split team names with official ESPN team logo assets'
   await expect(logos.nth(1)).toHaveAttribute('src','https://a.espncdn.com/i/teamlogos/nfl/500/det.png');
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+for(const status of ['placed','won','lost','push','void']){
+  test(`public team selection stays slate with ${status} text treatment`,async({page})=>{
+    const production=initialLeague();
+    production.weeks.find(w=>w.week===2).bets=[{stakeCents:500,status,payoutCents:0,description:'Buffalo Bills -3.5 @ Detroit Lions ATS'}];
+    await mockProduction(page,production);
+    await freezeWeek2(page);
+    await page.goto('/');
+    const card=page.locator('.single-bet-card');
+    await expect(card).toHaveAttribute('data-bet-result',status);
+    const pick=card.locator('.single-team-pick');
+    await expect(pick).toHaveAttribute('aria-label','Selected team: Buffalo Bills');
+    await expect(pick).toHaveCSS('background-color','rgb(37, 50, 67)');
+    await expect(pick).toHaveCSS('border-top-color','rgb(83, 98, 120)');
+    const color=await card.evaluate((el,status)=>status==='won'?getComputedStyle(document.body).getPropertyValue('--public-green').trim():status==='lost'?'#e59a9f':getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),status);
+    const expected=await page.evaluate(color=>{const el=document.createElement('span');el.style.color=color;document.body.append(el);const value=getComputedStyle(el).color;el.remove();return value;},color);
+    await expect(pick.locator('.single-team-name')).toHaveCSS('color',expected);
+    if(['won','lost'].includes(status))await expect(pick.locator('.single-team-location')).toHaveCSS('color',expected);
+    else await expect(pick.locator('.single-team-location')).toHaveCSS('color','rgb(154, 168, 187)');
+    await expect(card.locator('.single-team-opponent .single-team-name')).toHaveCSS('color','rgb(154, 168, 187)');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    expect(await pick.locator('.single-team-name').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  });
+}
+
+test('public total highlights the total selection without picking a team',async({page})=>{
+  const production=initialLeague();
+  production.weeks.find(w=>w.week===2).bets=[{stakeCents:500,status:'lost',payoutCents:0,description:'Buffalo Bills @ Detroit Lions over 54.5 total'}];
+  await mockProduction(page,production);
+  await freezeWeek2(page);
+  await page.goto('/');
+  const card=page.locator('.single-bet-card');
+  await expect(card).toHaveAttribute('data-matchup-layout','1');
+  await expect(card.locator('.single-team-pick')).toHaveCount(0);
+  await expect(card.locator('.single-total-pick')).toHaveText('TOTAL: Over 54.5');
+  await expect(card.locator('.single-total-pick')).toHaveCSS('color','rgb(229, 154, 159)');
+  await expect(card.locator('.single-team-name').first()).toHaveCSS('color','rgb(154, 168, 187)');
 });

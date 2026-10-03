@@ -56,6 +56,9 @@ test('public dashboard shows detected outcomes read-only without changing pot ac
   await expect(page.getByText('hit · auto',{exact:true})).toHaveCount(2);
   await expect(page.getByText('miss · auto',{exact:true})).toHaveCount(2);
   await expect(page.getByText('placed · auto won · $5.00',{exact:true})).toBeVisible();
+  await expect(page.locator('.single-bet-card')).toHaveAttribute('data-bet-result','won');
+  const selected=page.locator('.single-team-pick');
+  await expect(selected.locator('.single-team-location')).toHaveCSS('color',await selected.locator('.single-team-name').evaluate(el=>getComputedStyle(el).color));
   await expect(page.getByText('AUTO results are read-only until the commissioner saves the official status in Admin.')).toBeVisible();
   await expect(page.locator('[data-summary="pot"]')).toContainText('-$15.00');
   await expect(page.getByText('placed · $10.00',{exact:true})).toBeVisible();
@@ -82,5 +85,7 @@ test('public dashboard prefers commissioner-saved statuses over automatic propos
   await expect(page.getByText('miss',{exact:true})).toHaveCount(2);
   await expect(page.getByText('hit',{exact:true})).toHaveCount(2);
   await expect(page.getByText('AUTO results are read-only until the commissioner saves the official status in Admin.')).toHaveCount(0);
+  await expect(page.locator('.single-bet-card')).toHaveAttribute('data-bet-result','lost');
+  await expect(page.locator('.single-team-pick .single-team-location')).toHaveCSS('color','rgb(229, 154, 159)');
   expect(espnRequests).toBe(0);
 });

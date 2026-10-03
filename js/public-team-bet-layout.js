@@ -31,9 +31,12 @@ async function enhanceCard(card){
   const names=footer.textContent.split(/\s+vs\s+/i).map(x=>x.trim());
   const team=findNflTeam(names[0]),opponent=findNflTeam(names[1]);
   if(!team||!opponent)return;
-  card.dataset.matchupLayout='1';
-  matchup.innerHTML=`<img class="single-team-logo" src="${esc(team.logoUrl)}" alt="" aria-hidden="true" loading="lazy"><div class="single-team-copy single-team-pick">${teamParts(team)}</div><span class="single-venue" aria-label="matchup venue">·</span><div class="single-team-copy single-team-opponent">${teamParts(opponent)}</div><img class="single-team-logo" src="${esc(opponent.logoUrl)}" alt="" aria-hidden="true" loading="lazy">`;
+  const isTotal=card.querySelector('.bet-title-copy small')?.textContent.trim()==='Game total';
+  const totalPick=matchup.querySelector('.single-matchup-copy small')?.textContent||'';
   const outcome=card.querySelector('.bet-outcome')?.textContent?.trim().toLowerCase();
+  card.dataset.betResult=outcome||'placed';
+  card.dataset.matchupLayout='1';
+  matchup.innerHTML=`<img class="single-team-logo" src="${esc(team.logoUrl)}" alt="" aria-hidden="true" loading="lazy"><div class="single-team-copy${isTotal?'':' single-team-pick'}"${isTotal?'':` aria-label="Selected team: ${esc(team.full)}"`}>${teamParts(team)}</div><span class="single-venue" aria-label="matchup venue">·</span><div class="single-team-copy single-team-opponent">${teamParts(opponent)}</div><img class="single-team-logo" src="${esc(opponent.logoUrl)}" alt="" aria-hidden="true" loading="lazy">${isTotal?`<div class="single-total-pick">${esc(totalPick)}</div>`:''}`;
   if(!['placed','live'].includes(outcome))return;
   const games=await schedule();
   const venue=venueFor(team,opponent,games),marker=matchup.querySelector('.single-venue');
