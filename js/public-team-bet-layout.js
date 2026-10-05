@@ -17,6 +17,7 @@ function schedule(){
   return schedulePromise;
 }
 function teamParts(team){return `<span class="single-team-location">${esc(team.location)}</span><strong class="single-team-name">${esc(team.name)}</strong>`}
+function logo(team){return `<img class="single-team-logo" src="${esc(team.logoUrl)}" alt="" aria-hidden="true" loading="lazy">`}
 function venueFor(team,opponent,games){
   for(const competitors of games){
     const mine=competitors.find(c=>String(c?.team?.abbreviation||'').toUpperCase()===team.abbr),other=competitors.find(c=>String(c?.team?.abbreviation||'').toUpperCase()===opponent.abbr);
@@ -36,7 +37,8 @@ async function enhanceCard(card){
   const outcome=card.querySelector('.bet-outcome')?.textContent?.trim().toLowerCase();
   card.dataset.betResult=outcome||'placed';
   card.dataset.matchupLayout='1';
-  matchup.innerHTML=`<img class="single-team-logo" src="${esc(team.logoUrl)}" alt="" aria-hidden="true" loading="lazy"><div class="single-team-copy${isTotal?'':' single-team-pick'}"${isTotal?'':` aria-label="Selected team: ${esc(team.full)}"`}>${teamParts(team)}</div><span class="single-venue" aria-label="matchup venue">·</span><div class="single-team-copy single-team-opponent">${teamParts(opponent)}</div><img class="single-team-logo" src="${esc(opponent.logoUrl)}" alt="" aria-hidden="true" loading="lazy">${isTotal?`<div class="single-total-pick">${esc(totalPick)}</div>`:''}`;
+  const selectedTeam=isTotal?`${logo(team)}<div class="single-team-copy">${teamParts(team)}</div>`:`<div class="single-team-selection" aria-label="Selected team: ${esc(team.full)}">${logo(team)}<div class="single-team-copy single-team-pick">${teamParts(team)}</div></div>`;
+  matchup.innerHTML=`${selectedTeam}<span class="single-venue" aria-label="matchup venue">·</span><div class="single-team-copy single-team-opponent">${teamParts(opponent)}</div>${logo(opponent)}${isTotal?`<div class="single-total-pick">${esc(totalPick)}</div>`:''}`;
   if(!['placed','live'].includes(outcome))return;
   const games=await schedule();
   const venue=venueFor(team,opponent,games),marker=matchup.querySelector('.single-venue');
