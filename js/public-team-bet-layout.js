@@ -29,8 +29,7 @@ async function enhanceCard(card){
   if(card.dataset.matchupLayout==='1')return;
   const footer=card.querySelector('.single-bet-footer>span:first-child'),matchup=card.querySelector('.single-matchup');
   if(!footer||!matchup)return;
-  const names=footer.textContent.split(/\s+vs\s+/i).map(x=>x.trim());
-  const team=findNflTeam(names[0]),opponent=findNflTeam(names[1]);
+  const team=findNflTeam(card.dataset.pickTeam),opponent=findNflTeam(card.dataset.opponentTeam);
   if(!team||!opponent)return;
   const isTotal=card.querySelector('.bet-title-copy small')?.textContent.trim()==='Game total';
   const totalPick=matchup.querySelector('.single-matchup-copy small')?.textContent||'';
