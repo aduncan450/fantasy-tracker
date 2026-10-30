@@ -142,6 +142,8 @@ TEST MODE is an admin-only manual/end-to-end QA sandbox implemented at the persi
 - Backup export/import uses the active test dataset while TEST MODE is active.
 - TEST MODE is browser-local and disposable, not canonical or multi-device storage.
 
+The public dashboard player cards show the seven most recent parlay-leg outcomes per player (including pending/push), while the win-loss record and percentage use all decided legs across the season.
+
 ## 13. Frontend cache busting — mandatory
 GitHub Pages/mobile browsers can retain stale JS/CSS. Every frontend deployment must ensure changed assets and their dependency graph receive a new URL.
 
